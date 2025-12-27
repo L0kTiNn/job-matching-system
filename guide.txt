@@ -1,0 +1,13 @@
+Начало работы демки:
+1. docker ps -a (проверка статуса)
+2. docker start job_matching_db
+3. docker ps
+4. python backend/app/database.py
+5. python backend/app/main.py
+
+Остановка:
+1. docker stop job_matching_db
+
+Ссылка: http://localhost:8000/docs
+
+Иконки: https://icons8.com/

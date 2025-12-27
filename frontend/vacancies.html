@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вакансии - РабоtаPlus</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
+            <ul class="nav-links">
+                <li><a href="vacancies.html" style="color: #ff6b35;">Вакансии</a></li>
+                <li><a href="my-resume.html">Моё резюме</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="Должность или компания" id="searchInput">
+                    <span><img src="static/images/lupa.jpg" width="20" height="20"></span>
+                </div>
+                <a href="create-resume.html" class="btn-register">
+                    Создать резюме →
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Vacancies Section -->
+    <div class="container" style="margin-top: 60px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+            <h1 class="section-title" style="margin: 0;"> Все вакансии</h1>
+            <select id="sortSelect" style="padding: 12px 20px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 15px;">
+                <option value="new">Новые</option>
+                <option value="salary_high">Зарплата: высокая</option>
+                <option value="salary_low">Зарплата: низкая</option>
+            </select>
+        </div>
+
+        <div id="vacanciesList" class="vacancies-grid">
+            <div class="loading">Загрузка вакансий...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // Load vacancies
+        async function loadVacancies() {
+            try {
+                const response = await fetch(`${API_URL}/api/vacancies/all`);
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки вакансий');
+                }
+
+                const vacancies = await response.json();
+                displayVacancies(vacancies);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('vacanciesList').innerHTML = `
+                    <div class="error-message">
+                        Не удалось загрузить вакансии. Убедитесь, что сервер запущен.
+                    </div>
+                `;
+            }
+        }
+
+        // Display vacancies
+        function displayVacancies(vacancies) {
+            const container = document.getElementById('vacanciesList');
+
+            if (!vacancies || vacancies.length === 0) {
+                container.innerHTML = '<div class="loading">Вакансий пока нет. <a href="create-vacancy.html">Создать вакансию</a></div>';
+                return;
+            }
+
+            container.innerHTML = vacancies.map(vacancy => `
+                <div class="vacancy-card">
+                    <h3 class="vacancy-title">${vacancy.title}</h3>
+                    ${vacancy.description ? `
+                        <p class="vacancy-company">${vacancy.description.substring(0, 150)}...</p>
+                    ` : ''}
+                    <div class="vacancy-details">
+                        <div class="detail-item">
+                            📍 ${vacancy.location || 'Не указано'}
+                        </div>
+                    </div>
+                    <div class="vacancy-salary">
+                        ${formatSalary(vacancy.salary_min, vacancy.salary_max)}
+                    </div>
+                    <button class="btn-primary" style="margin-top: 20px; width: 100%;" onclick="viewVacancy(${vacancy.id})">
+                        Подробнее
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Format salary
+        function formatSalary(min, max) {
+            if (!min && !max) return 'Зарплата не указана';
+            if (min && max) return `${min.toLocaleString()} - ${max.toLocaleString()} ₽`;
+            if (min) return `от ${min.toLocaleString()} ₽`;
+            return `до ${max.toLocaleString()} ₽`;
+        }
+
+        // View vacancy
+        function viewVacancy(id) {
+            alert(`Просмотр вакансии #${id}. Функционал детального просмотра в разработке.`);
+        }
+
+        // Search
+        document.getElementById('searchInput')?.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.vacancy-card');
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        });
+
+        // Load on page load
+        loadVacancies();
+    </script>
+</body>
+</html>

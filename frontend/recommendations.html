@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рекомендации вакансий - РабоtаPlus</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="vacancies.html">Вакансии</a></li>
+                <li><a href="my-resume.html">Моё резюме</a></li>
+                <li><a href="create-resume.html">Создать резюме</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="index.html" class="btn-register">
+                    ← На главную
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Recommendations Section -->
+    <div class="container" style="margin-top: 60px;">
+        <div id="resumeInfo" class="form-container" style="margin-bottom: 40px;">
+            <div class="loading">Загрузка информации о резюме...</div>
+        </div>
+
+        <h2 class="section-title"> Подходящие вакансии для вас</h2>
+
+        <div id="recommendationsList" class="vacancies-grid">
+            <div class="loading">Поиск вакансий...</div>
+        </div>
+    </div>
+
+    <script src="static/js/recommendations.js"></script>
+</body>
+</html>
