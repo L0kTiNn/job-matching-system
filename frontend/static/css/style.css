@@ -47,7 +47,7 @@ nav {
     color: #fff;
     text-decoration: none;
     font-weight: 400;
-    font-size: 14px;  /* Было 15px - немного уменьшаем */
+    font-size: 16px;
     transition: color 0.3s;
     white-space: nowrap;  /* Не переносим текст */
 }
@@ -373,3 +373,54 @@ nav {
         grid-template-columns: 1fr;
     }
 }
+/* Form Styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #ff6b35;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+}
+/* Кнопки в хедере - оранжевые с hover */
+.btn-register {
+    background: #ff6b35 !important;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;  /* Увеличил для круглой формы */
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-register:hover {
+    background: #e55a2b !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+}
+
+
