@@ -192,27 +192,49 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
         db.connect()
 
         # Проверка существования вакансии
-        db.cursor.execute("SELECT id FROM vacancies WHERE id = %s", (vacancy_id,))
-        if not db.cursor.fetchone():
+        db.cursor.execute("SELECT id, title, description FROM vacancies WHERE id = %s", (vacancy_id,))
+        vacancy_data = db.cursor.fetchone()
+
+        if not vacancy_data:
             raise HTTPException(status_code=404, detail="Вакансия не найдена")
 
-        # Поиск подходящих резюме
+        # Поиск похожих резюме (аналогично find_similar_vacancies)
         similar = db.find_similar_resumes(vacancy_id, limit)
 
+        if not similar:
+            return {
+                "vacancy": {
+                    "id": vacancy_data[0],
+                    "title": vacancy_data[1],
+                    "description": vacancy_data[2]
+                },
+                "candidates": [],
+                "total": 0
+            }
+
         candidates = []
-        for resume_id, title, summary, skills, salary, location, similarity in similar:
+        for resume_id, title, skills, experience, education, desired_position, desired_salary, location, similarity in similar:
             candidates.append({
-                "id": resume_id,
+                "resume_id": resume_id,
+                "full_name": f"Кандидат #{resume_id}",
                 "title": title,
-                "summary": summary[:200] + "..." if summary and len(summary) > 200 else summary,
-                "skills": skills,
-                "similarity": round(similarity * 100, 2),
-                "desired_salary": salary,
+                "desired_position": desired_position or "Не указана",
+                "skills": skills or "Не указаны",
+                "experience": experience or "Не указан",
+                "education": education or "Не указано",
+                "contact_email": "candidate@example.com",
+                "contact_phone": "+7 (XXX) XXX-XX-XX",
+                "match_percentage": round(similarity * 100, 1),
+                "desired_salary": desired_salary,
                 "location": location
             })
 
         return {
-            "vacancy_id": vacancy_id,
+            "vacancy": {
+                "id": vacancy_data[0],
+                "title": vacancy_data[1],
+                "description": vacancy_data[2]
+            },
             "candidates": candidates,
             "total": len(candidates)
         }
@@ -220,6 +242,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Ошибка: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()

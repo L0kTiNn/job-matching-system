@@ -21,6 +21,7 @@ async function loadVacancies() {
 
         const vacancies = await response.json();
         displayVacancies(vacancies);
+        initSearch(); // Инициализируем поиск ПОСЛЕ загрузки
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('vacanciesList').innerHTML = `
@@ -68,19 +69,24 @@ function formatSalary(min, max) {
 
 // Show vacancy details
 function showVacancyDetails(id) {
-    alert(`Вакансия #${id}. Функционал просмотра в разработке.`);
+    window.location.href = `view-vacancy.html?id=${id}`;
 }
 
-// Search
-document.getElementById('searchInput')?.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const cards = document.querySelectorAll('.vacancy-card');
+// Initialize search AFTER vacancies loaded
+function initSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
 
-    cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(query) ? 'block' : 'none';
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.vacancy-card');
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(query) || query === '' ? 'block' : 'none';
+        });
     });
-});
+}
 
 // Load on page load
 if (document.getElementById('vacanciesList')) {

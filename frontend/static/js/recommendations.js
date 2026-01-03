@@ -68,12 +68,13 @@ function displayRecommendations(recommendations) {
     }
 
     container.innerHTML = recommendations.map(vacancy => `
-        <div class="vacancy-card">
-            <div class="similarity-badge">
-                 Совпадение: ${vacancy.similarity.toFixed(1)}%
+        <div class="vacancy-card" style="position: relative;">
+            <!-- Процент совпадения справа сверху -->
+            <div style="position: absolute; top: 15px; right: 15px; background: #667eea; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                Совпадение: ${Math.round(vacancy.similarity)}%
             </div>
 
-            <h3 class="vacancy-title">${vacancy.title}</h3>
+            <h3 class="vacancy-title" style="margin-top: 10px;">${vacancy.title}</h3>
 
             ${vacancy.description ? `
                 <p class="vacancy-company">${vacancy.description}</p>

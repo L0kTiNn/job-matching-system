@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подходящие кандидаты - РабоtаPlus</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="vacancies.html">Вакансии</a></li>
+                <li><a href="my-resume.html">Моё резюме</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="vacancies.html" class="btn-register">← На главную</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 100px; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 40px;">
+
+        <!-- Success Message -->
+        <div class="form-container" style="text-align: center; margin-bottom: 40px; max-width: 800px; margin-left: auto; margin-right: auto;" id="vacancyInfo">
+            <h2 style="color: #2d2d2d; margin-bottom: 10px;">Загрузка...</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;"></p>
+        </div>
+
+        <!-- Candidates Title -->
+        <h1 class="section-title">Подходящие кандидаты для вас</h1>
+
+        <!-- Candidates Grid -->
+        <div id="candidatesList" class="vacancies-grid">
+            <div class="loading">Загрузка кандидатов...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        async function loadCandidates() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const vacancyId = urlParams.get('id');
+
+            if (!vacancyId) {
+                showError('ID вакансии не указан');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/vacancies/${vacancyId}/candidates?limit=100`);
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки данных');
+                }
+
+                const data = await response.json();
+
+                // Показываем информацию о вакансии
+                const vacancyInfo = document.getElementById('vacancyInfo');
+                vacancyInfo.querySelector('h2').textContent = `Подходящие кандидаты для: ${data.vacancy.title}`;
+                vacancyInfo.querySelector('p').textContent = data.vacancy.description || '';
+
+                // Отображаем кандидатов
+                displayCandidates(data.candidates);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Не удалось загрузить кандидатов');
+            }
+        }
+
+        function displayCandidates(candidates) {
+            const container = document.getElementById('candidatesList');
+
+            if (!candidates || candidates.length === 0) {
+                container.innerHTML = `
+                    <div class="form-container" style="text-align: center;">
+                        <h2 style="color: #666; margin-bottom: 20px;">Подходящих кандидатов не найдено</h2>
+                        <p style="color: #999;">Попробуйте изменить требования вакансии</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = candidates.map(candidate => `
+                <div class="vacancy-card" style="position: relative;">
+                    <!-- Процент совпадения -->
+                    <div style="position: absolute; top: 15px; right: 15px; background: #667eea; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                        Совпадение: ${candidate.match_percentage}%
+                    </div>
+
+                    <!-- Название должности -->
+                    <h3 class="vacancy-title" style="margin-top: 10px;">${candidate.desired_position || candidate.title || 'Кандидат #' + candidate.resume_id}</h3>
+
+                    <!-- Краткое описание навыков -->
+                    ${candidate.skills ? `
+                        <p class="vacancy-company">${candidate.skills.substring(0, 100)}${candidate.skills.length > 100 ? '...' : ''}</p>
+                    ` : ''}
+
+                    <!-- Опыт и образование -->
+                    <div style="margin: 15px 0; font-size: 14px; color: #666;">
+                        ${candidate.experience ? `<div style="margin-bottom: 8px;"><strong style="color: #2d2d2d;">Опыт:</strong> ${candidate.experience}</div>` : ''}
+                        ${candidate.education ? `<div><strong style="color: #2d2d2d;">Образование:</strong> ${candidate.education}</div>` : ''}
+                    </div>
+
+                    <!-- Детали (зарплата и локация) -->
+                    <div class="vacancy-details">
+                        ${candidate.location ? `
+                            <div class="detail-item">
+                                📍 ${candidate.location}
+                            </div>
+                        ` : ''}
+                        ${candidate.desired_salary ? `
+                            <div class="detail-item">
+                                💰 от ${candidate.desired_salary.toLocaleString()} ₽
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Кнопка связаться -->
+                    <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="contactCandidate(${candidate.resume_id}, '${candidate.contact_email}', '${candidate.contact_phone}')">
+                        ✉ Связаться
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function contactCandidate(resumeId, email, phone) {
+            alert(`Контакты кандидата:\n\n📧 Email: ${email}\n📱 Телефон: ${phone}\n\n🆔 ID резюме: ${resumeId}`);
+        }
+
+        function showError(message) {
+            const container = document.getElementById('candidatesList');
+            container.innerHTML = `
+                <div class="form-container" style="text-align: center;">
+                    <h2 style="color: #ff4444; margin-bottom: 10px;">❌ Ошибка</h2>
+                    <p style="color: #666;">${message}</p>
+                    <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none;">
+                        ← Вернуться к вакансиям
+                    </a>
+                </div>
+            `;
+        }
+
+        // Загружаем данные при загрузке страницы
+        window.addEventListener('load', loadCandidates);
+    </script>
+</body>
+</html>

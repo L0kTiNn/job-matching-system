@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header>
         <nav>
             <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
@@ -20,12 +19,10 @@
                 <a href="create-resume.html" class="btn-register">Создать резюме</a>
             </div>
         </nav>
-
     </header>
 
-    <!-- Resumes Section -->
     <div class="container" style="margin-top: 60px; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 40px;">
-        <h1 class="section-title"> Мои резюме</h1>
+        <h1 class="section-title">Мои резюме</h1>
 
         <div id="resumesList" class="vacancies-grid">
             <div class="loading">Загрузка резюме...</div>
@@ -35,119 +32,88 @@
     <script>
         const API_URL = 'http://localhost:8000';
 
-        // Load resumes
         async function loadResumes() {
             try {
                 const response = await fetch(`${API_URL}/api/resumes/all`);
-
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки резюме');
-                }
-
+                if (!response.ok) throw new Error('Ошибка загрузки');
                 const resumes = await response.json();
                 displayResumes(resumes);
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('resumesList').innerHTML = `
-                    <div class="error-message">
-                        Не удалось загрузить резюме. Убедитесь, что сервер запущен.
-                    </div>
-                `;
+                document.getElementById('resumesList').innerHTML = '<div class="error-message">Не удалось загрузить резюме.</div>';
             }
         }
 
-        // Display resumes
         function displayResumes(resumes) {
             const container = document.getElementById('resumesList');
-
             if (!resumes || resumes.length === 0) {
-                container.innerHTML = `
-                    <div class="form-container" style="text-align: center;">
-                        <h2 style="color: #666; margin-bottom: 20px;">У вас пока нет резюме</h2>
-                        <a href="create-resume.html" class="btn-primary" style="display: inline-block; text-decoration: none;">
-                            Создать первое резюме
-                        </a>
-                    </div>
-                `;
+                container.innerHTML = '<div class="loading">Резюме пока нет. <a href="create-resume.html">Создать резюме</a></div>';
                 return;
             }
 
             container.innerHTML = resumes.map(resume => `
                 <div class="vacancy-card">
-                    <h3 class="vacancy-title">${resume.title}</h3>
+                    <h3 class="vacancy-title">${resume.title || resume.desired_position || 'Без названия'}</h3>
+                    ${resume.experience ? `<p class="vacancy-company">${resume.experience.substring(0, 100)}...</p>` : ''}
 
-                    ${resume.summary ? `
-                        <p class="vacancy-company">${resume.summary.substring(0, 120)}...</p>
-                    ` : ''}
-
-                    ${resume.skills ? `
-                        <div style="margin: 15px 0;">
-                            <strong style="color: #2d2d2d;">Навыки:</strong><br>
-                            <span style="color: #666; font-size: 14px;">${resume.skills}</span>
-                        </div>
-                    ` : ''}
+                    <div style="margin: 15px 0;">
+                        <strong style="color: #2d2d2d;">Навыки:</strong><br>
+                        <p style="color: #666; font-size: 14px; margin-top: 5px;">${resume.skills ? resume.skills.substring(0, 120) + '...' : 'Не указаны'}</p>
+                    </div>
 
                     <div class="vacancy-details">
-                        <div class="detail-item">
-                            · ${resume.location || 'Не указано'}
-                        </div>
+                        <div class="detail-item">📍 ${resume.location || 'Не указано'}</div>
                         ${resume.desired_salary ? `
-                            <div class="detail-item">
-                                💰 от ${resume.desired_salary.toLocaleString()} ₽
-                            </div>
+                            <div class="detail-item">💰 от ${resume.desired_salary.toLocaleString()} ₽</div>
                         ` : ''}
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-                        <button class="btn-primary" onclick="viewResume(${resume.id})">
-                             Просмотр
+                        <button onclick="viewResume(${resume.id})" style="background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                            Просмотр
                         </button>
-                        <button class="btn-primary" onclick="findVacancies(${resume.id})">
-                             Найти вакансии
+                        <button onclick="editResume(${resume.id})" style="background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                            Редактировать
                         </button>
-                        <button class="btn-secondary" style="grid-column: 1 / -1;" onclick="deleteResume(${resume.id})">
-                             Удалить
+                        <button class="btn-find-vacancies" onclick="findVacancies(${resume.id})">
+                            Найти вакансии
+                        </button>
+                        <button onclick="deleteResume(${resume.id})" style="background: transparent; color: #2d2d2d; padding: 12px; border: 2px solid #2d2d2d; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.background='#2d2d2d'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#2d2d2d'">
+                            Удалить
                         </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // View resume
-        function viewResume(resumeId) {
-            window.location.href = `view-resume.html?id=${resumeId}`;
+        function viewResume(id) {
+            window.location.href = `view-resume.html?id=${id}`;
         }
 
-        // Find vacancies for resume
-        function findVacancies(resumeId) {
-            window.location.href = `recommendations.html?resume_id=${resumeId}`;
+        function editResume(id) {
+            window.location.href = `edit-resume.html?id=${id}`;
         }
 
-        // Delete resume
-        async function deleteResume(resumeId) {
-            if (!confirm('Вы уверены, что хотите удалить это резюме?')) {
-                return;
+        function findVacancies(id) {
+            window.location.href = `recommendations.html?resume_id=${id}`;  // ← Здесь resume_id!
             }
 
+
+
+        async function deleteResume(resumeId) {
+            if (!confirm('Вы уверены, что хотите удалить это резюме?')) return;
+
             try {
-                const response = await fetch(`${API_URL}/api/resumes/${resumeId}`, {
-                    method: 'DELETE'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка удаления');
-                }
-
+                const response = await fetch(`${API_URL}/api/resumes/${resumeId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Ошибка удаления');
                 alert(' Резюме удалено');
-                loadResumes(); // Reload list
-
+                loadResumes();
             } catch (error) {
                 alert(' Не удалось удалить резюме');
                 console.error(error);
             }
         }
 
-        // Load on page load
         loadResumes();
     </script>
 </body>

@@ -27,7 +27,7 @@
 
     <div class="container" style="margin-top: 60px; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 40px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-            <h1 class="section-title" style="margin: 0; flex: 1; text-align: center;"> Все вакансии</h1>
+            <h1 class="section-title" style="margin: 0; flex: 1; text-align: center;">Все вакансии</h1>
             <select id="sortSelect" style="padding: 12px 20px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 15px;">
                 <option value="new">Новые</option>
                 <option value="salary_high">Зарплата: высокая</option>
@@ -42,16 +42,47 @@
 
     <script>
         const API_URL = 'http://localhost:8000';
+        let allVacancies = [];
+
+        // Получаем параметр search из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search');
 
         async function loadVacancies() {
             try {
                 const response = await fetch(`${API_URL}/api/vacancies/all`);
                 if (!response.ok) throw new Error('Ошибка загрузки');
-                const vacancies = await response.json();
-                displayVacancies(vacancies);
+                allVacancies = await response.json();
+                displayVacancies(allVacancies);
+                initSearchAndSort();
+
+                // Если есть параметр search - применяем фильтр
+                if (searchQuery) {
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('searchInput');
+                        searchInput.value = searchQuery;
+
+                        // Применяем фильтр вручную
+                        const query = searchQuery.toLowerCase();
+                        const cards = document.querySelectorAll('.vacancy-card');
+                        let visibleCount = 0;
+
+                        cards.forEach(card => {
+                            const text = card.textContent.toLowerCase();
+                            if (text.includes(query)) {
+                                card.style.display = 'block';
+                                visibleCount++;
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+
+                        console.log(`Поиск "${searchQuery}": найдено ${visibleCount} вакансий`);
+                    }, 100);
+                }
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('vacanciesList').innerHTML = '<div class="error-message">Не удалось загрузить вакансии. Убедитесь, что сервер запущен.</div>';
+                document.getElementById('vacanciesList').innerHTML = '<div class="error-message">Не удалось загрузить вакансии.</div>';
             }
         }
 
@@ -67,24 +98,64 @@
                     <h3 class="vacancy-title">${vacancy.title}</h3>
                     ${vacancy.description ? `<p class="vacancy-company">${vacancy.description.substring(0, 150)}...</p>` : ''}
                     <div class="vacancy-details">
-                        <div class="detail-item"> · ${vacancy.location || 'Не указано'}</div>
+                        <div class="detail-item">📍 ${vacancy.location || 'Не указано'}</div>
                     </div>
                     <div class="vacancy-salary">${formatSalary(vacancy.salary_min, vacancy.salary_max)}</div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-                        <button onclick="viewVacancy(${vacancy.id})" style="flex: 1; background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
-                            ️Просмотр
+                        <button onclick="viewVacancy(${vacancy.id})" style="background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                            Просмотр
                         </button>
-                        <button onclick="editVacancy(${vacancy.id})" style="flex: 1; background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                        <button onclick="editVacancy(${vacancy.id})" style="background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
                             Редактировать
                         </button>
+                        <button class="btn-find-candidates" onclick="findCandidates(${vacancy.id})">
+                            Найти кандидатов
+                        </button>
+                        <button onclick="deleteVacancy(${vacancy.id})" style="background: transparent; color: #2d2d2d; padding: 12px; border: 2px solid #2d2d2d; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.background='#2d2d2d'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#2d2d2d'">
+                            Удалить
+                        </button>
                     </div>
-
-                    <button onclick="deleteVacancy(${vacancy.id})" style="width: 100%; margin-top: 10px; background: transparent; color: #2d2d2d; padding: 12px; border: 2px solid #2d2d2d; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.background='#2d2d2d'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#2d2d2d'">
-                         Удалить
-                    </button>
                 </div>
             `).join('');
+        }
+
+        function initSearchAndSort() {
+            const searchInput = document.getElementById('searchInput');
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+
+            // ПОИСК в реальном времени
+            newSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.vacancy-card');
+
+                cards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = text.includes(query) || query === '' ? 'block' : 'none';
+                });
+            });
+
+            // СОРТИРОВКА
+            const sortSelect = document.getElementById('sortSelect');
+            const newSortSelect = sortSelect.cloneNode(true);
+            sortSelect.parentNode.replaceChild(newSortSelect, sortSelect);
+
+            newSortSelect.addEventListener('change', (e) => {
+                const sortType = e.target.value;
+                let sorted = [...allVacancies];
+
+                if (sortType === 'salary_high') {
+                    sorted.sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
+                } else if (sortType === 'salary_low') {
+                    sorted.sort((a, b) => (a.salary_min || 999999) - (b.salary_min || 999999));
+                } else {
+                    sorted.sort((a, b) => b.id - a.id);
+                }
+
+                displayVacancies(sorted);
+                initSearchAndSort();
+            });
         }
 
         function formatSalary(min, max) {
@@ -102,13 +173,15 @@
             window.location.href = `edit-vacancy.html?id=${id}`;
         }
 
+        function findCandidates(id) {
+            window.location.href = `my-vacancy.html?id=${id}`;
+        }
+
         async function deleteVacancy(vacancyId) {
             if (!confirm('Вы уверены, что хотите удалить эту вакансию?')) return;
 
             try {
-                const response = await fetch(`${API_URL}/api/vacancies/${vacancyId}`, {
-                    method: 'DELETE'
-                });
+                const response = await fetch(`${API_URL}/api/vacancies/${vacancyId}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Ошибка удаления');
                 alert(' Вакансия удалена');
                 loadVacancies();
@@ -117,15 +190,6 @@
                 console.error(error);
             }
         }
-
-        document.getElementById('searchInput')?.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.vacancy-card');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? 'block' : 'none';
-            });
-        });
 
         loadVacancies();
     </script>

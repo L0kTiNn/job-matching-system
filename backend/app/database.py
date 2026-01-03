@@ -180,6 +180,24 @@ class DatabaseManager:
         self.cursor.execute(query, (vacancy_id, limit))
         return self.cursor.fetchall()
 
+    def find_similar_resumes(self, vacancy_id: int, limit: int = 10):
+        """Найти похожие резюме для вакансии"""
+        query = """
+        SELECT 
+            r.id, r.title, r.skills, r.experience, r.education, 
+            r.desired_position, r.desired_salary, r.location,
+            1 - (v.embedding <=> r.embedding) as similarity
+        FROM resumes r, vacancies v
+        WHERE v.id = %s 
+          AND r.embedding IS NOT NULL
+          AND v.embedding IS NOT NULL
+        ORDER BY v.embedding <=> r.embedding
+        LIMIT %s
+        """
+
+        self.cursor.execute(query, (vacancy_id, limit))
+        return self.cursor.fetchall()
+
 
 # Тест подключения
 if __name__ == "__main__":
