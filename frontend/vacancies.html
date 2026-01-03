@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header>
         <nav>
             <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
@@ -21,17 +20,14 @@
                     <input type="text" placeholder="Должность или компания" id="searchInput">
                     <span><img src="static/images/lupa.jpg" width="20" height="20"></span>
                 </div>
-                <a href="create-resume.html" class="btn-register">
-                    Создать резюме →
-                </a>
+                <a href="create-vacancy.html" class="btn-register">Создать вакансию</a>
             </div>
         </nav>
     </header>
 
-    <!-- Vacancies Section -->
-    <div class="container" style="margin-top: 60px;">
+    <div class="container" style="margin-top: 60px; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 40px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-            <h1 class="section-title" style="margin: 0;"> Все вакансии</h1>
+            <h1 class="section-title" style="margin: 0; flex: 1; text-align: center;"> Все вакансии</h1>
             <select id="sortSelect" style="padding: 12px 20px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 15px;">
                 <option value="new">Новые</option>
                 <option value="salary_high">Зарплата: высокая</option>
@@ -47,31 +43,20 @@
     <script>
         const API_URL = 'http://localhost:8000';
 
-        // Load vacancies
         async function loadVacancies() {
             try {
                 const response = await fetch(`${API_URL}/api/vacancies/all`);
-
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки вакансий');
-                }
-
+                if (!response.ok) throw new Error('Ошибка загрузки');
                 const vacancies = await response.json();
                 displayVacancies(vacancies);
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('vacanciesList').innerHTML = `
-                    <div class="error-message">
-                        Не удалось загрузить вакансии. Убедитесь, что сервер запущен.
-                    </div>
-                `;
+                document.getElementById('vacanciesList').innerHTML = '<div class="error-message">Не удалось загрузить вакансии. Убедитесь, что сервер запущен.</div>';
             }
         }
 
-        // Display vacancies
         function displayVacancies(vacancies) {
             const container = document.getElementById('vacanciesList');
-
             if (!vacancies || vacancies.length === 0) {
                 container.innerHTML = '<div class="loading">Вакансий пока нет. <a href="create-vacancy.html">Создать вакансию</a></div>';
                 return;
@@ -80,25 +65,28 @@
             container.innerHTML = vacancies.map(vacancy => `
                 <div class="vacancy-card">
                     <h3 class="vacancy-title">${vacancy.title}</h3>
-                    ${vacancy.description ? `
-                        <p class="vacancy-company">${vacancy.description.substring(0, 150)}...</p>
-                    ` : ''}
+                    ${vacancy.description ? `<p class="vacancy-company">${vacancy.description.substring(0, 150)}...</p>` : ''}
                     <div class="vacancy-details">
-                        <div class="detail-item">
-                            📍 ${vacancy.location || 'Не указано'}
-                        </div>
+                        <div class="detail-item"> · ${vacancy.location || 'Не указано'}</div>
                     </div>
-                    <div class="vacancy-salary">
-                        ${formatSalary(vacancy.salary_min, vacancy.salary_max)}
+                    <div class="vacancy-salary">${formatSalary(vacancy.salary_min, vacancy.salary_max)}</div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                        <button onclick="viewVacancy(${vacancy.id})" style="flex: 1; background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                            ️Просмотр
+                        </button>
+                        <button onclick="editVacancy(${vacancy.id})" style="flex: 1; background: #ff6b35; color: white; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='#e55a2b'" onmouseout="this.style.background='#ff6b35'">
+                            Редактировать
+                        </button>
                     </div>
-                    <button class="btn-primary" style="margin-top: 20px; width: 100%;" onclick="viewVacancy(${vacancy.id})">
-                        Подробнее
+
+                    <button onclick="deleteVacancy(${vacancy.id})" style="width: 100%; margin-top: 10px; background: transparent; color: #2d2d2d; padding: 12px; border: 2px solid #2d2d2d; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.background='#2d2d2d'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='#2d2d2d'">
+                         Удалить
                     </button>
                 </div>
             `).join('');
         }
 
-        // Format salary
         function formatSalary(min, max) {
             if (!min && !max) return 'Зарплата не указана';
             if (min && max) return `${min.toLocaleString()} - ${max.toLocaleString()} ₽`;
@@ -106,23 +94,39 @@
             return `до ${max.toLocaleString()} ₽`;
         }
 
-        // View vacancy
         function viewVacancy(id) {
-            alert(`Просмотр вакансии #${id}. Функционал детального просмотра в разработке.`);
+            window.location.href = `view-vacancy.html?id=${id}`;
         }
 
-        // Search
+        function editVacancy(id) {
+            window.location.href = `edit-vacancy.html?id=${id}`;
+        }
+
+        async function deleteVacancy(vacancyId) {
+            if (!confirm('Вы уверены, что хотите удалить эту вакансию?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/vacancies/${vacancyId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Ошибка удаления');
+                alert(' Вакансия удалена');
+                loadVacancies();
+            } catch (error) {
+                alert(' Не удалось удалить вакансию');
+                console.error(error);
+            }
+        }
+
         document.getElementById('searchInput')?.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             const cards = document.querySelectorAll('.vacancy-card');
-
             cards.forEach(card => {
                 const text = card.textContent.toLowerCase();
                 card.style.display = text.includes(query) ? 'block' : 'none';
             });
         });
 
-        // Load on page load
         loadVacancies();
     </script>
 </body>

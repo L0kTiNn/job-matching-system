@@ -17,15 +17,14 @@
                 <li><a href="profile.html">Профиль</a></li>
             </ul>
             <div class="nav-actions">
-                <a href="create-resume.html" class="btn-register">Создать резюме →
-                </a>
+                <a href="create-resume.html" class="btn-register">Создать резюме</a>
             </div>
         </nav>
 
     </header>
 
     <!-- Resumes Section -->
-    <div class="container" style="margin-top: 60px;">
+    <div class="container" style="margin-top: 60px; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 40px;">
         <h1 class="section-title"> Мои резюме</h1>
 
         <div id="resumesList" class="vacancies-grid">
@@ -90,7 +89,7 @@
 
                     <div class="vacancy-details">
                         <div class="detail-item">
-                            📍 ${resume.location || 'Не указано'}
+                            · ${resume.location || 'Не указано'}
                         </div>
                         ${resume.desired_salary ? `
                             <div class="detail-item">
@@ -99,16 +98,24 @@
                         ` : ''}
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn-primary" style="flex: 1;" onclick="findVacancies(${resume.id})">
-                            🎯 Найти вакансии
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                        <button class="btn-primary" onclick="viewResume(${resume.id})">
+                             Просмотр
                         </button>
-                        <button class="btn-secondary" style="flex: 1;" onclick="deleteResume(${resume.id})">
-                            🗑️ Удалить
+                        <button class="btn-primary" onclick="findVacancies(${resume.id})">
+                             Найти вакансии
+                        </button>
+                        <button class="btn-secondary" style="grid-column: 1 / -1;" onclick="deleteResume(${resume.id})">
+                             Удалить
                         </button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        // View resume
+        function viewResume(resumeId) {
+            window.location.href = `view-resume.html?id=${resumeId}`;
         }
 
         // Find vacancies for resume
@@ -131,11 +138,11 @@
                     throw new Error('Ошибка удаления');
                 }
 
-                alert('✅ Резюме удалено');
+                alert(' Резюме удалено');
                 loadResumes(); // Reload list
 
             } catch (error) {
-                alert('❌ Не удалось удалить резюме');
+                alert(' Не удалось удалить резюме');
                 console.error(error);
             }
         }

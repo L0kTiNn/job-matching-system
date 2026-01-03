@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Просмотр резюме - РабоtаPlus</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .resume-detail {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .resume-header {
+            border-bottom: 2px solid #ff6b35;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .resume-title {
+            font-size: 32px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .resume-meta {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .resume-section {
+            margin-bottom: 30px;
+        }
+
+        .resume-section h3 {
+            color: #ff6b35;
+            font-size: 20px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff6b35;
+            padding-left: 12px;
+        }
+
+        .resume-section p {
+            color: #34495e;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .resume-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-edit {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #e55a2b;
+        }
+
+        .btn-back {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #7f8c8d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
+            <ul class="nav-links">
+                <li><a href="vacancies.html">Вакансии</a></li>
+                <li><a href="my-resume.html" style="color: #ff6b35;">Моё резюме</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="create-resume.html" class="btn-register">Создать резюме</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Resume Detail -->
+    <div class="resume-detail">
+        <div id="loading" class="loading">
+            Загрузка резюме...
+        </div>
+
+        <div id="error" style="display: none;"></div>
+
+        <div id="resumeContent" style="display: none;">
+            <div class="resume-header">
+                <h1 class="resume-title" id="resumeTitle"></h1>
+                <div class="resume-meta">
+                    <span id="resumeLocation"></span>
+                    <span id="resumeSalary"></span>
+                    <span id="resumeDate"></span>
+                </div>
+            </div>
+
+            <div class="resume-section" id="summarySection" style="display: none;">
+                <h3>О себе</h3>
+                <p id="resumeSummary"></p>
+            </div>
+
+            <div class="resume-section" id="skillsSection" style="display: none;">
+                <h3>Ключевые навыки</h3>
+                <p id="resumeSkills"></p>
+            </div>
+
+            <div class="resume-section" id="experienceSection" style="display: none;">
+                <h3>Опыт работы</h3>
+                <p id="resumeExperience"></p>
+            </div>
+
+            <div class="resume-section" id="educationSection" style="display: none;">
+                <h3>Образование</h3>
+                <p id="resumeEducation"></p>
+            </div>
+
+            <div class="resume-actions">
+                <a href="#" id="editBtn" class="btn btn-edit"> Редактировать</a>
+                <a href="my-resume.html" class="btn btn-back">← Назад к списку</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/view-resume.js"></script>
+</body>
+</html>

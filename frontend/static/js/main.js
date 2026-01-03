@@ -5,6 +5,11 @@ function scrollToVacancies() {
     document.getElementById('vacancies').scrollIntoView({ behavior: 'smooth' });
 }
 
+// Scroll to how it works
+function scrollToHow() {
+    document.getElementById('howItWorks').scrollIntoView({ behavior: 'smooth' });
+}
+
 // Load vacancies
 async function loadVacancies() {
     try {

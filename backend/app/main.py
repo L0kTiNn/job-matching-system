@@ -7,9 +7,10 @@ import sys
 
 sys.path.append('.')
 
-from backend.app.models import ResumeCreate, VacancyCreate, RecommendationResponse
+from backend.app.models import ResumeCreate, VacancyCreate, RecommendationResponse, ResumeUpdate, VacancyUpdate
 from backend.app.database import DatabaseManager
 from ml.embedder import ResumeVacancyEmbedder
+
 
 app = FastAPI(
     title="Job Matching System API",
@@ -346,6 +347,230 @@ def get_all_resumes():
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+
+@app.get("/api/resumes/{resume_id}")
+def get_resume(resume_id: int):
+    """Получить одно резюме по ID"""
+    db = DatabaseManager()
+
+    try:
+        db.connect()
+
+        # Получение резюме
+        db.cursor.execute("""
+            SELECT id, user_id, title, summary, skills, experience, education,
+                   desired_position, desired_salary, location, created_at
+            FROM resumes
+            WHERE id = %s
+        """, (resume_id,))
+
+        row = db.cursor.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Резюме не найдено")
+
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "title": row[2],
+            "summary": row[3],
+            "skills": row[4],
+            "experience": row[5],
+            "education": row[6],
+            "desired_position": row[7],
+            "desired_salary": row[8],
+            "location": row[9],
+            "created_at": str(row[10]) if row[10] else None
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.put("/api/resumes/{resume_id}")
+def update_resume(resume_id: int, resume: ResumeUpdate):
+    """Обновить резюме"""
+    db = DatabaseManager()
+
+    try:
+        db.connect()
+
+        # Проверка существования
+        db.cursor.execute("SELECT id FROM resumes WHERE id = %s", (resume_id,))
+        if not db.cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Резюме не найдено")
+
+        # Обновление только переданных полей
+        update_fields = []
+        values = []
+
+        for field, value in resume.dict(exclude_unset=True).items():
+            update_fields.append(f"{field} = %s")
+            values.append(value)
+
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="Нет данных для обновления")
+
+        values.append(resume_id)
+
+        query = f"""
+            UPDATE resumes 
+            SET {', '.join(update_fields)}
+            WHERE id = %s
+        """
+
+        db.cursor.execute(query, values)
+        db.conn.commit()
+
+        # Регенерация эмбеддинга после обновления
+        db.cursor.execute("""
+            SELECT title, summary, skills, experience, education, 
+                   desired_position, desired_salary, location
+            FROM resumes WHERE id = %s
+        """, (resume_id,))
+
+        row = db.cursor.fetchone()
+        resume_data = {
+            'title': row[0],
+            'summary': row[1],
+            'skills': row[2],
+            'experience': row[3],
+            'education': row[4],
+            'desired_position': row[5],
+            'desired_salary': row[6],
+            'location': row[7]
+        }
+
+        embedding = embedder.encode_resume(resume_data)
+        db.save_resume_embedding(resume_id, embedding)
+
+        return {
+            "message": "Резюме успешно обновлено",
+            "id": resume_id,
+            "embedding_updated": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.get("/api/vacancies/{vacancy_id}")
+def get_vacancy(vacancy_id: int):
+    """Получить одну вакансию по ID"""
+    db = DatabaseManager()
+
+    try:
+        db.connect()
+
+        # Получение вакансии
+        db.cursor.execute("""
+            SELECT id, employer_id, title, description, requirements,
+                   salary_min, salary_max, location, created_at
+            FROM vacancies
+            WHERE id = %s
+        """, (vacancy_id,))
+
+        row = db.cursor.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Вакансия не найдена")
+
+        return {
+            "id": row[0],
+            "employer_id": row[1],
+            "title": row[2],
+            "description": row[3],
+            "requirements": row[4],
+            "salary_min": row[5],
+            "salary_max": row[6],
+            "location": row[7],
+            "created_at": str(row[8]) if row[8] else None
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.put("/api/vacancies/{vacancy_id}")
+def update_vacancy(vacancy_id: int, vacancy: VacancyUpdate):
+    """Обновить вакансию"""
+    db = DatabaseManager()
+
+    try:
+        db.connect()
+
+        # Проверка существования
+        db.cursor.execute("SELECT id FROM vacancies WHERE id = %s", (vacancy_id,))
+        if not db.cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Вакансия не найдена")
+
+        # Обновление только переданных полей
+        update_fields = []
+        values = []
+
+        for field, value in vacancy.dict(exclude_unset=True).items():
+            update_fields.append(f"{field} = %s")
+            values.append(value)
+
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="Нет данных для обновления")
+
+        values.append(vacancy_id)
+
+        query = f"""
+            UPDATE vacancies 
+            SET {', '.join(update_fields)}
+            WHERE id = %s
+        """
+
+        db.cursor.execute(query, values)
+        db.conn.commit()
+
+        # Регенерация эмбеддинга после обновления
+        db.cursor.execute("""
+            SELECT title, description, requirements, salary_min, salary_max, location
+            FROM vacancies WHERE id = %s
+        """, (vacancy_id,))
+
+        row = db.cursor.fetchone()
+        vacancy_data = {
+            'title': row[0],
+            'description': row[1],
+            'requirements': row[2],
+            'salary_min': row[3],
+            'salary_max': row[4],
+            'location': row[5]
+        }
+
+        embedding = embedder.encode_vacancy(vacancy_data)
+        db.save_vacancy_embedding(vacancy_id, embedding)
+
+        return {
+            "message": "Вакансия успешно обновлена",
+            "id": vacancy_id,
+            "embedding_updated": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
     import uvicorn

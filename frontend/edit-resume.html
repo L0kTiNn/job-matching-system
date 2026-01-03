@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать резюме - РабоtаPlus</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo" style="text-decoration: none;">Работа<span>Plus</span></a>
+            <ul class="nav-links">
+                <li><a href="vacancies.html">Вакансии</a></li>
+                <li><a href="my-resume.html" style="color: #ff6b35;">Моё резюме</a></li>
+                <li><a href="profile.html">Профиль</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="my-resume.html" class="btn-register">← Назад</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Form Section -->
+    <div class="form-container">
+        <h1 class="section-title">Редактировать резюме</h1>
+
+        <div id="message"></div>
+        <div id="loading" style="text-align: center; padding: 50px; color: #7f8c8d;">
+            Загрузка резюме...
+        </div>
+
+        <form id="editResumeForm" style="display: none;">
+            <div class="form-group">
+                <label for="title">Желаемая должность *</label>
+                <input type="text" id="title" required placeholder="Например: Python Backend Developer">
+            </div>
+
+            <div class="form-group">
+                <label for="summary">О себе</label>
+                <textarea id="summary" placeholder="Расскажите о себе, своем опыте и достижениях"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="skills">Ключевые навыки *</label>
+                <textarea id="skills" required placeholder="Например: Python, Django, PostgreSQL, Docker, Git"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="experience">Опыт работы</label>
+                <textarea id="experience" placeholder="Опишите ваш опыт работы"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="education">Образование</label>
+                <input type="text" id="education" placeholder="Например: ОГУ, Информационные системы и технологии">
+            </div>
+
+            <div class="form-group">
+                <label for="desired_salary">Желаемая зарплата (руб.)</label>
+                <input type="number" id="desired_salary" placeholder="150000">
+            </div>
+
+            <div class="form-group">
+                <label for="location">Город</label>
+                <input type="text" id="location" placeholder="Москва">
+            </div>
+
+            <button type="submit" class="btn-submit">
+                 Сохранить изменения
+            </button>
+        </form>
+    </div>
+
+    <script src="static/js/edit-resume.js"></script>
+</body>
+</html>

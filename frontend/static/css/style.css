@@ -169,7 +169,7 @@ nav {
 }
 
 .btn-primary:hover {
-    background: #e85a28;
+    background: #e55a2b;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
 }
@@ -421,6 +421,26 @@ nav {
     background: #e55a2b !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+}
+
+.btn-how-it-works {
+    background: transparent;
+    color: #2d2d2d;
+    padding: 14px 35px;
+    border: 1px solid #2d2d2d;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-how-it-works:hover {
+    background: #95a5a6;
+    border-color: #95a5a6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
 }
 
 
