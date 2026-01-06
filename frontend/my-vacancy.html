@@ -92,12 +92,12 @@
             container.innerHTML = candidates.map(candidate => `
                 <div class="vacancy-card" style="position: relative;">
                     <!-- Процент совпадения -->
-                    <div style="position: absolute; top: 15px; right: 15px; background: #667eea; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                        Совпадение: ${candidate.match_percentage}%
+                    <div style="position: absolute; top: 15px; right: 15px; background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(255,107,53,0.3);">
+                        🔥 ${Math.round(candidate.match_percentage)}%
                     </div>
 
                     <!-- Название должности -->
-                    <h3 class="vacancy-title" style="margin-top: 10px;">${candidate.desired_position || candidate.title || 'Кандидат #' + candidate.resume_id}</h3>
+                    <h3 class="vacancy-title" style="margin-top: 10px; max-width: 75%;">${candidate.desired_position || candidate.title || 'Кандидат #' + candidate.resume_id}</h3>
 
                     <!-- Краткое описание навыков -->
                     ${candidate.skills ? `
@@ -106,8 +106,8 @@
 
                     <!-- Опыт и образование -->
                     <div style="margin: 15px 0; font-size: 14px; color: #666;">
-                        ${candidate.experience ? `<div style="margin-bottom: 8px;"><strong style="color: #2d2d2d;">Опыт:</strong> ${candidate.experience}</div>` : ''}
-                        ${candidate.education ? `<div><strong style="color: #2d2d2d;">Образование:</strong> ${candidate.education}</div>` : ''}
+                        ${candidate.experience ? `<div style="margin-bottom: 8px;"><strong style="color: #2d2d2d;">💼 Опыт:</strong> ${candidate.experience}</div>` : ''}
+                        ${candidate.education ? `<div><strong style="color: #2d2d2d;">🎓 Образование:</strong> ${candidate.education}</div>` : ''}
                     </div>
 
                     <!-- Детали (зарплата и локация) -->
@@ -125,15 +125,18 @@
                     </div>
 
                     <!-- Кнопка связаться -->
-                    <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="contactCandidate(${candidate.resume_id}, '${candidate.contact_email}', '${candidate.contact_phone}')">
-                        ✉ Связаться
+                    <button class="btn-primary" style="width: 100%; margin-top: 20px; background: #ff6b35; transition: all 0.3s ease;"
+                            onmouseover="this.style.background='#e55a2b'"
+                            onmouseout="this.style.background='#ff6b35'"
+                            onclick="contactCandidate(${candidate.resume_id}, '${candidate.contact_email}', '${candidate.contact_phone}')">
+                        ✉ Связаться с кандидатом
                     </button>
                 </div>
             `).join('');
         }
 
         function contactCandidate(resumeId, email, phone) {
-            alert(`Контакты кандидата:\n\n📧 Email: ${email}\n📱 Телефон: ${phone}\n\n🆔 ID резюме: ${resumeId}`);
+            alert(`📋 Контакты кандидата:\n\n📧 Email: ${email}\n📱 Телефон: ${phone}\n\n🆔 ID резюме: ${resumeId}`);
         }
 
         function showError(message) {
@@ -142,14 +145,14 @@
                 <div class="form-container" style="text-align: center;">
                     <h2 style="color: #ff4444; margin-bottom: 10px;">❌ Ошибка</h2>
                     <p style="color: #666;">${message}</p>
-                    <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none;">
+                    <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none; background: #ff6b35;">
                         ← Вернуться к вакансиям
                     </a>
                 </div>
             `;
         }
 
-        // Загружаем данные при загрузке страницы
+        //
         window.addEventListener('load', loadCandidates);
     </script>
 </body>

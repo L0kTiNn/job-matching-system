@@ -2,8 +2,11 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Dict, Tuple, Set
 import sys
+import re
+from difflib import SequenceMatcher
+from collections import Counter
 
 sys.path.append('.')
 
@@ -11,11 +14,68 @@ from backend.app.models import ResumeCreate, VacancyCreate, RecommendationRespon
 from backend.app.database import DatabaseManager
 from ml.embedder import ResumeVacancyEmbedder
 
+# ============= MULTILINGUAL ЭМБЕДДИНГИ ДЛЯ НАВЫКОВ =============
+
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+from functools import lru_cache
+
+print("🔄 Загрузка multilingual модели для сравнения навыков...")
+skill_comparison_model = SentenceTransformer('paraphrase-multilingual-mpnet-base-v2')
+print("✅ Модель для навыков загружена!")
+
+skill_embeddings_cache = {}
+
+def normalize_skill_text(skill: str) -> str:
+    """Нормализация навыка"""
+    return skill.lower().strip()
+
+@lru_cache(maxsize=2000)
+def get_skill_embedding_cached(skill: str) -> np.ndarray:
+    """Получить эмбеддинг навыка с кэшированием"""
+    normalized = normalize_skill_text(skill)
+
+    if normalized not in skill_embeddings_cache:
+        skill_embeddings_cache[normalized] = skill_comparison_model.encode(normalized)
+
+    return skill_embeddings_cache[normalized]
+
+def are_skills_semantically_similar(skill1: str, skill2: str, threshold: float = 0.75) -> bool:
+    """
+    Проверка семантической похожести навыков через эмбеддинги
+    Работает с русским и английским языками!
+
+    Examples:
+        >>> are_skills_semantically_similar("machine learning", "машинное обучение")
+        True
+        >>> are_skills_semantically_similar("python", "java")
+        False
+    """
+    s1 = normalize_skill_text(skill1)
+    s2 = normalize_skill_text(skill2)
+
+    # Быстрая проверка точного совпадения
+    if s1 == s2:
+        return True
+
+    # Сравнение через эмбеддинги
+    try:
+        emb1 = get_skill_embedding_cached(skill1)
+        emb2 = get_skill_embedding_cached(skill2)
+
+        similarity = cosine_similarity([emb1], [emb2])[0][0]
+        return similarity >= threshold
+    except Exception as e:
+        print(f"Ошибка сравнения навыков '{skill1}' и '{skill2}': {e}")
+        return False
+
+# ============= КОНЕЦ ЭМБЕДДИНГОВ =============
 
 app = FastAPI(
     title="Job Matching System API",
     description="Система подбора вакансий с использованием ML",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # CORS для фронтенда
@@ -31,12 +91,400 @@ app.add_middleware(
 embedder = ResumeVacancyEmbedder()
 
 
+# ============= УМНОЕ ИЗВЛЕЧЕНИЕ НАВЫКОВ (NLP) =============
+
+class SkillExtractor:
+    """Продвинутый экстрактор навыков с нормализацией и контекстным анализом"""
+
+    # База данных технических навыков с синонимами
+    SKILL_DATABASE = {
+        # Языки программирования
+        "python": ["python", "python3", "py"],
+        "javascript": ["javascript", "js", "ecmascript"],
+        "typescript": ["typescript", "ts"],
+        "java": ["java", "java se", "java ee"],
+        "c++": ["c++", "cpp", "c plus plus"],
+        "c#": ["c#", "csharp", "c sharp"],
+        "php": ["php", "php7", "php8"],
+        "ruby": ["ruby", "ruby on rails", "ror"],
+        "go": ["go", "golang"],
+        "rust": ["rust"],
+        "kotlin": ["kotlin"],
+        "swift": ["swift"],
+        "scala": ["scala"],
+        "r": ["r", "rstudio"],
+        "perl": ["perl"],
+
+        # Frontend
+        "react": ["react", "reactjs", "react.js", "react js"],
+        "vue": ["vue", "vuejs", "vue.js", "vue js"],
+        "angular": ["angular", "angularjs"],
+        "html": ["html", "html5"],
+        "css": ["css", "css3"],
+        "sass": ["sass", "scss"],
+        "less": ["less"],
+        "webpack": ["webpack"],
+        "redux": ["redux"],
+        "next.js": ["next", "nextjs", "next.js"],
+        "nuxt": ["nuxt", "nuxtjs"],
+        "tailwind": ["tailwind", "tailwindcss"],
+        "bootstrap": ["bootstrap"],
+        "jquery": ["jquery"],
+
+        # Backend
+        "fastapi": ["fastapi", "fast api"],
+        "django": ["django"],
+        "flask": ["flask"],
+        "express": ["express", "expressjs", "express.js"],
+        "node.js": ["node", "nodejs", "node.js"],
+        "spring": ["spring", "spring boot"],
+        "laravel": ["laravel"],
+        "asp.net": ["asp.net", "asp", ".net"],
+        "rails": ["rails", "ruby on rails"],
+        "nest.js": ["nest", "nestjs"],
+
+        # Базы данных
+        "postgresql": ["postgresql", "postgres", "psql"],
+        "mysql": ["mysql"],
+        "mongodb": ["mongodb", "mongo"],
+        "redis": ["redis"],
+        "elasticsearch": ["elasticsearch", "elastic"],
+        "cassandra": ["cassandra"],
+        "oracle": ["oracle", "oracle db"],
+        "mssql": ["mssql", "sql server"],
+        "sqlite": ["sqlite"],
+        "dynamodb": ["dynamodb"],
+        "mariadb": ["mariadb"],
+
+        # DevOps & Cloud
+        "docker": ["docker"],
+        "kubernetes": ["kubernetes", "k8s"],
+        "jenkins": ["jenkins"],
+        "gitlab": ["gitlab", "gitlab ci"],
+        "github": ["github", "github actions"],
+        "aws": ["aws", "amazon web services"],
+        "azure": ["azure", "microsoft azure"],
+        "gcp": ["gcp", "google cloud"],
+        "terraform": ["terraform"],
+        "ansible": ["ansible"],
+
+        # Инструменты
+        "git": ["git"],
+        "linux": ["linux", "unix"],
+        "nginx": ["nginx"],
+        "apache": ["apache"],
+        "rabbitmq": ["rabbitmq", "rabbit mq"],
+        "kafka": ["kafka", "apache kafka"],
+
+        # API
+        "rest": ["rest", "restful", "rest api"],
+        "graphql": ["graphql", "graph ql"],
+        "grpc": ["grpc"],
+        "websocket": ["websocket", "websockets"],
+
+        # Тестирование
+        "pytest": ["pytest"],
+        "unittest": ["unittest"],
+        "jest": ["jest"],
+        "selenium": ["selenium"],
+        "cypress": ["cypress"],
+
+        # ML/Data
+        "machine learning": ["machine learning", "ml", "машинное обучение", "машин обучение", "машинное обуч"],
+        "deep learning": ["deep learning", "dl", "глубокое обучение", "глубинное обучение"],
+        "tensorflow": ["tensorflow", "tf", "тенсорфлоу"],
+        "pytorch": ["pytorch", "пайторч"],
+        "scikit-learn": ["scikit-learn", "sklearn", "сайкит", "сайкит-лёрн"],
+        "pandas": ["pandas", "пандас"],
+        "numpy": ["numpy", "нампай"],
+        "jupyter": ["jupyter", "jupyter notebook", "джупитер"],
+        "data science": ["data science", "наука о данных", "дата сайенс"],
+        "data analysis": ["data analysis", "анализ данных"],
+        "big data": ["big data", "большие данные", "биг дата"],
+
+        # Soft skills
+        "agile": ["agile", "scrum", "kanban"],
+        "английский": ["английский", "english", "english language"],
+        "коммуникация": ["коммуникация", "communication"],
+        "лидерство": ["лидерство", "leadership"],
+        "командная работа": ["командная работа", "teamwork", "team work"],
+    }
+
+    # Обратный индекс для быстрого поиска
+    SYNONYM_MAP = {}
+    for canonical, synonyms in SKILL_DATABASE.items():
+        for syn in synonyms:
+            SYNONYM_MAP[syn.lower()] = canonical
+
+    @classmethod
+    def extract_skills(cls, text: str) -> Set[str]:
+        """
+        Умное извлечение навыков с нормализацией
+
+        Args:
+            text: Текст резюме или вакансии
+
+        Returns:
+            Множество нормализованных навыков
+        """
+        if not text:
+            return set()
+
+        text_lower = text.lower()
+        found_skills = set()
+
+        # 1. Точное совпадение по синонимам
+        for synonym, canonical in cls.SYNONYM_MAP.items():
+            # Используем границы слов для точности
+            pattern = r'\b' + re.escape(synonym) + r'\b'
+            if re.search(pattern, text_lower):
+                found_skills.add(canonical)
+
+        # 2. Fuzzy matching для опечаток (только для длинных слов)
+        words = re.findall(r'\b\w{4,}\b', text_lower)
+        for word in words:
+            best_match = cls._fuzzy_match_skill(word)
+            if best_match:
+                found_skills.add(best_match)
+
+        return found_skills
+
+    @classmethod
+    def _fuzzy_match_skill(cls, word: str, threshold: float = 0.85) -> str:
+        """
+        Нечеткое сопоставление для учета опечаток
+
+        Args:
+            word: Слово для проверки
+            threshold: Порог сходства (0-1)
+
+        Returns:
+            Канонический навык или None
+        """
+        best_score = 0
+        best_skill = None
+
+        for synonym, canonical in cls.SYNONYM_MAP.items():
+            # Пропускаем короткие синонимы для fuzzy matching
+            if len(synonym) < 4:
+                continue
+
+            similarity = SequenceMatcher(None, word, synonym).ratio()
+            if similarity > best_score and similarity >= threshold:
+                best_score = similarity
+                best_skill = canonical
+
+        return best_skill
+
+    @classmethod
+    def categorize_skills(cls, skills: Set[str]) -> Dict[str, List[str]]:
+        """Категоризация навыков"""
+        categories = {
+            "languages": [],
+            "frontend": [],
+            "backend": [],
+            "databases": [],
+            "devops": [],
+            "tools": [],
+            "ml": [],
+            "soft_skills": []
+        }
+
+        category_map = {
+            "python": "languages", "javascript": "languages", "java": "languages",
+            "typescript": "languages", "c++": "languages", "c#": "languages",
+
+            "react": "frontend", "vue": "frontend", "angular": "frontend",
+            "html": "frontend", "css": "frontend",
+
+            "django": "backend", "flask": "backend", "fastapi": "backend",
+            "express": "backend", "node.js": "backend",
+
+            "postgresql": "databases", "mysql": "databases", "mongodb": "databases",
+            "redis": "databases",
+
+            "docker": "devops", "kubernetes": "devops", "aws": "devops",
+            "azure": "devops", "jenkins": "devops",
+
+            "git": "tools", "linux": "tools", "nginx": "tools",
+
+            "machine learning": "ml", "tensorflow": "ml", "pytorch": "ml",
+            "pandas": "ml",
+
+            "agile": "soft_skills", "английский": "soft_skills",
+            "коммуникация": "soft_skills", "лидерство": "soft_skills"
+        }
+
+        for skill in skills:
+            category = category_map.get(skill, "tools")
+            categories[category].append(skill)
+
+        # Удаляем пустые категории
+        return {k: sorted(v) for k, v in categories.items() if v}
+
+
+# ============= ПРОДВИНУТАЯ СИСТЕМА SCORING =============
+
+class MatchAnalyzer:
+    """Многофакторный анализ совместимости резюме и вакансии"""
+
+    @staticmethod
+    def calculate_match_score(
+        resume_skills: Set[str],
+        vacancy_skills: Set[str],
+        resume_text: str,
+        vacancy_text: str
+    ) -> Dict:
+        """
+        Рассчитывает многофакторную оценку совпадения
+        НОВОЕ: Использует семантическое сравнение через эмбеддинги!
+        """
+
+        # 🚀 УМНОЕ сравнение с учётом синонимов и переводов!
+        matched_skills = []
+        missing_skills = []
+        used_resume_skills = set()
+
+        # Для каждого требуемого навыка ищем совпадение в резюме
+        for vacancy_skill in vacancy_skills:
+            found = False
+
+            for resume_skill in resume_skills:
+                if resume_skill in used_resume_skills:
+                    continue
+
+                # ПРОВЕРКА через эмбеддинги (русский + английский!)
+                if are_skills_semantically_similar(vacancy_skill, resume_skill):
+                    matched_skills.append(vacancy_skill)
+                    used_resume_skills.add(resume_skill)
+                    found = True
+                    break
+
+            if not found:
+                missing_skills.append(vacancy_skill)
+
+        # Дополнительные навыки
+        extra_skills = [s for s in resume_skills if s not in used_resume_skills]
+
+        # 1. Базовая оценка по навыкам
+        if vacancy_skills:
+            skills_score = (len(matched_skills) / len(vacancy_skills)) * 100
+        else:
+            skills_score = 0
+
+        # 2. Бонус за дополнительные навыки
+        extra_bonus = min(len(extra_skills) * 2, 15)
+
+        # 3. Штраф за критичные пропущенные навыки
+        critical_missing = MatchAnalyzer._identify_critical_skills(set(missing_skills))
+        critical_penalty = len(critical_missing) * 10
+
+        # 4. Итоговая оценка
+        total_score = min(max(skills_score + extra_bonus - critical_penalty, 0), 100)
+
+        return {
+            "total_score": round(total_score, 1),
+            "skills_score": round(skills_score, 1),
+            "matched_skills": sorted(matched_skills),
+            "missing_skills": sorted(missing_skills),
+            "critical_missing": sorted(list(critical_missing)),
+            "extra_skills": sorted(extra_skills),
+            "extra_bonus": extra_bonus,
+            "critical_penalty": critical_penalty
+        }
+
+    @staticmethod
+    def _identify_critical_skills(missing: Set[str]) -> Set[str]:
+        """Определяет критически важные пропущенные навыки"""
+        critical_keywords = {
+            "python", "javascript", "java", "react", "vue", "angular",
+            "postgresql", "mysql", "mongodb", "docker", "kubernetes",
+            "aws", "azure", "английский"
+        }
+        return missing & critical_keywords
+
+
+# ============= ГЕНЕРАТОР УМНЫХ РЕКОМЕНДАЦИЙ =============
+
+class RecommendationEngine:
+    """Генератор персонализированных рекомендаций"""
+
+    @staticmethod
+    def generate_recommendations(analysis: Dict) -> str:
+        """Генерирует детальные рекомендации на основе анализа"""
+
+        score = analysis["total_score"]
+        matched = analysis["matched_skills"]
+        missing = analysis["missing_skills"]
+        critical = analysis["critical_missing"]
+        extra = analysis["extra_skills"]
+
+        # 1. Отличное совпадение (90%+)
+        if score >= 90:
+            return (
+                f"🎉 **Отличное совпадение!** Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
+                f"✅ Совпало навыков: {len(matched)}\n"
+                f"💡 У вас есть {len(extra)} дополнительных навыков, что выделяет вас среди других кандидатов!\n\n"
+                f"**Рекомендация:** Смело откликайтесь! Высокие шансы на приглашение."
+            )
+
+        # 2. Хорошее совпадение (70-89%)
+        elif score >= 70:
+            tips = []
+            if missing:
+                top_missing = missing[:3]
+                tips.append(f"Добавьте в резюме: {', '.join(top_missing)}")
+            if critical:
+                tips.append(f"⚠️ Критично изучить: {', '.join(critical)}")
+
+            recommendations_text = "\n".join([f"• {tip}" for tip in tips])
+
+            return (
+                f"✅ **Хорошее совпадение!** Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
+                f"Совпало {len(matched)} из {len(matched) + len(missing)} требуемых навыков.\n\n"
+                f"**Как улучшить резюме:**\n{recommendations_text}\n\n"
+                f"Это повысит ваши шансы на приглашение до ~95%!"
+            )
+
+        # 3. Среднее совпадение (50-69%)
+        elif score >= 50:
+            if critical:
+                return (
+                    f"💡 **Среднее совпадение** ({round(score)}%). У вас есть потенциал!\n\n"
+                    f"✅ Совпало: {len(matched)} навыков\n"
+                    f"❌ Не хватает: {len(missing)} навыков\n\n"
+                    f"**⚠️ Критично важно изучить:**\n"
+                    + "\n".join([f"• {skill}" for skill in critical[:5]]) +
+                    f"\n\n**Рекомендация:** Пройдите курсы по этим технологиям и обновите резюме через 1-2 месяца."
+                )
+            else:
+                return (
+                    f"💡 **Среднее совпадение** ({round(score)}%). Можно улучшить!\n\n"
+                    f"**Добавьте в резюме навыки:**\n"
+                    + "\n".join([f"• {skill}" for skill in missing[:5]]) +
+                    f"\n\nЭто повысит совпадение до ~{min(round(score) + 20, 95)}%!"
+                )
+
+        # 4. Низкое совпадение (<50%)
+        else:
+            return (
+                f"⚠️ **Низкое совпадение** ({round(score)}%). Эта вакансия может быть сложной.\n\n"
+                f"Не хватает {len(missing)} ключевых навыков из {len(missing) + len(matched)}.\n\n"
+                f"**Критичные навыки для изучения:**\n"
+                + "\n".join([f"• {skill}" for skill in (critical or missing)[:7]]) +
+                f"\n\n**Рекомендация:** Рассмотрите вакансии, более подходящие под ваш текущий опыт, "
+                f"или инвестируйте время в изучение недостающих технологий."
+            )
+
+
+# ============= ENDPOINTS =============
+
 @app.get("/")
 def root():
     """Корневой endpoint"""
     return {
         "message": "Job Matching System API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "endpoints": {
             "docs": "/docs",
             "resumes": "/api/resumes",
@@ -60,7 +508,6 @@ def create_resume(resume: ResumeCreate):
     try:
         db.connect()
 
-        # Вставка резюме в БД
         query = """
         INSERT INTO resumes (user_id, title, summary, skills, experience, education, 
                            desired_position, desired_salary, location)
@@ -77,7 +524,6 @@ def create_resume(resume: ResumeCreate):
         resume_id = db.cursor.fetchone()[0]
         db.conn.commit()
 
-        # Генерация эмбеддинга
         embedding = embedder.encode_resume(resume.dict())
         db.save_resume_embedding(resume_id, embedding)
 
@@ -101,7 +547,6 @@ def create_vacancy(vacancy: VacancyCreate):
     try:
         db.connect()
 
-        # Вставка вакансии в БД
         query = """
         INSERT INTO vacancies (employer_id, title, description, requirements,
                              salary_min, salary_max, location)
@@ -118,7 +563,6 @@ def create_vacancy(vacancy: VacancyCreate):
         vacancy_id = db.cursor.fetchone()[0]
         db.conn.commit()
 
-        # Генерация эмбеддинга
         embedding = embedder.encode_vacancy(vacancy.dict())
         db.save_vacancy_embedding(vacancy_id, embedding)
 
@@ -142,12 +586,10 @@ def get_vacancy_recommendations(resume_id: int, limit: int = 10):
     try:
         db.connect()
 
-        # Проверка существования резюме
         db.cursor.execute("SELECT id FROM resumes WHERE id = %s", (resume_id,))
         if not db.cursor.fetchone():
             raise HTTPException(status_code=404, detail="Резюме не найдено")
 
-        # Поиск похожих вакансий
         similar = db.find_similar_vacancies(resume_id, limit)
 
         if not similar:
@@ -185,20 +627,26 @@ def get_vacancy_recommendations(resume_id: int, limit: int = 10):
 
 @app.get("/api/vacancies/{vacancy_id}/candidates")
 def get_resume_recommendations(vacancy_id: int, limit: int = 10):
-    """Получить рекомендации кандидатов для вакансии"""
+    """
+    🚀 ОБНОВЛЕНО! Получить рекомендации кандидатов для вакансии
+    Использует ТУ ЖЕ логику что и подбор вакансий по резюме!
+    """
     db = DatabaseManager()
 
     try:
         db.connect()
 
-        # Проверка существования вакансии
-        db.cursor.execute("SELECT id, title, description FROM vacancies WHERE id = %s", (vacancy_id,))
+        # Проверяем существование вакансии
+        db.cursor.execute(
+            "SELECT id, title, description FROM vacancies WHERE id = %s",
+            (vacancy_id,)
+        )
         vacancy_data = db.cursor.fetchone()
 
         if not vacancy_data:
             raise HTTPException(status_code=404, detail="Вакансия не найдена")
 
-        # Поиск похожих резюме (аналогично find_similar_vacancies)
+        # ИСПОЛЬЗУЕМ ТОТ ЖЕ МЕТОД что и для вакансий!
         similar = db.find_similar_resumes(vacancy_id, limit)
 
         if not similar:
@@ -213,20 +661,23 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
             }
 
         candidates = []
-        for resume_id, title, skills, experience, education, desired_position, desired_salary, location, similarity in similar:
+        for row in similar:
+            # Распаковываем результат (8 полей + similarity)
+            resume_id, title, skills, experience, education, desired_position, desired_salary, location, similarity = row
+
             candidates.append({
                 "resume_id": resume_id,
                 "full_name": f"Кандидат #{resume_id}",
-                "title": title,
+                "title": title or "Без названия",
                 "desired_position": desired_position or "Не указана",
                 "skills": skills or "Не указаны",
                 "experience": experience or "Не указан",
                 "education": education or "Не указано",
                 "contact_email": "candidate@example.com",
                 "contact_phone": "+7 (XXX) XXX-XX-XX",
-                "match_percentage": round(similarity * 100, 1),
+                "match_percentage": round(similarity * 100, 1),  #
                 "desired_salary": desired_salary,
-                "location": location
+                "location": location or "Не указана"
             })
 
         return {
@@ -242,7 +693,9 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"❌ Ошибка в get_resume_recommendations: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
@@ -288,12 +741,10 @@ def delete_vacancy(vacancy_id: int):
     try:
         db.connect()
 
-        # Проверка существования
         db.cursor.execute("SELECT id FROM vacancies WHERE id = %s", (vacancy_id,))
         if not db.cursor.fetchone():
             raise HTTPException(status_code=404, detail="Вакансия не найдена")
 
-        # Удаление
         db.cursor.execute("DELETE FROM vacancies WHERE id = %s", (vacancy_id,))
         db.conn.commit()
 
@@ -318,12 +769,10 @@ def delete_resume(resume_id: int):
     try:
         db.connect()
 
-        # Проверка существования
         db.cursor.execute("SELECT id FROM resumes WHERE id = %s", (resume_id,))
         if not db.cursor.fetchone():
             raise HTTPException(status_code=404, detail="Резюме не найдено")
 
-        # Удаление
         db.cursor.execute("DELETE FROM resumes WHERE id = %s", (resume_id,))
         db.conn.commit()
 
@@ -380,7 +829,6 @@ def get_resume(resume_id: int):
     try:
         db.connect()
 
-        # Получение резюме
         db.cursor.execute("""
             SELECT id, user_id, title, summary, skills, experience, education,
                    desired_position, desired_salary, location, created_at
@@ -423,12 +871,10 @@ def update_resume(resume_id: int, resume: ResumeUpdate):
     try:
         db.connect()
 
-        # Проверка существования
         db.cursor.execute("SELECT id FROM resumes WHERE id = %s", (resume_id,))
         if not db.cursor.fetchone():
             raise HTTPException(status_code=404, detail="Резюме не найдено")
 
-        # Обновление только переданных полей
         update_fields = []
         values = []
 
@@ -450,7 +896,6 @@ def update_resume(resume_id: int, resume: ResumeUpdate):
         db.cursor.execute(query, values)
         db.conn.commit()
 
-        # Регенерация эмбеддинга после обновления
         db.cursor.execute("""
             SELECT title, summary, skills, experience, education, 
                    desired_position, desired_salary, location
@@ -494,7 +939,6 @@ def get_vacancy(vacancy_id: int):
     try:
         db.connect()
 
-        # Получение вакансии
         db.cursor.execute("""
             SELECT id, employer_id, title, description, requirements,
                    salary_min, salary_max, location, created_at
@@ -535,12 +979,10 @@ def update_vacancy(vacancy_id: int, vacancy: VacancyUpdate):
     try:
         db.connect()
 
-        # Проверка существования
         db.cursor.execute("SELECT id FROM vacancies WHERE id = %s", (vacancy_id,))
         if not db.cursor.fetchone():
             raise HTTPException(status_code=404, detail="Вакансия не найдена")
 
-        # Обновление только переданных полей
         update_fields = []
         values = []
 
@@ -562,7 +1004,6 @@ def update_vacancy(vacancy_id: int, vacancy: VacancyUpdate):
         db.cursor.execute(query, values)
         db.conn.commit()
 
-        # Регенерация эмбеддинга после обновления
         db.cursor.execute("""
             SELECT title, description, requirements, salary_min, salary_max, location
             FROM vacancies WHERE id = %s
@@ -595,7 +1036,109 @@ def update_vacancy(vacancy_id: int, vacancy: VacancyUpdate):
         db.close()
 
 
+@app.get("/api/resumes/{resume_id}/vacancies/{vacancy_id}/match-analysis")
+def analyze_match(resume_id: int, vacancy_id: int):
+    """
+    🚀 УЛУЧШЕННЫЙ детальный анализ совпадения резюме и вакансии
+    Использует multilingual эмбеддинги для сравнения навыков!
+    """
+    db = DatabaseManager()
+
+    try:
+        db.connect()
+
+        db.cursor.execute("""
+            SELECT title, summary, skills, experience, education, desired_position
+            FROM resumes WHERE id = %s
+        """, (resume_id,))
+
+        resume_data = db.cursor.fetchone()
+        if not resume_data:
+            raise HTTPException(status_code=404, detail="Резюме не найдено")
+
+        db.cursor.execute("""
+            SELECT title, description, requirements, salary_min, salary_max, location
+            FROM vacancies WHERE id = %s
+        """, (vacancy_id,))
+
+        vacancy_data = db.cursor.fetchone()
+        if not vacancy_data:
+            raise HTTPException(status_code=404, detail="Вакансия не найдена")
+
+        resume_text = " ".join(filter(None, [
+            resume_data[0], resume_data[1], resume_data[2],
+            resume_data[3], resume_data[4], resume_data[5]
+        ]))
+
+        vacancy_text = " ".join(filter(None, [
+            vacancy_data[0], vacancy_data[1], vacancy_data[2]
+        ]))
+
+        resume_skills = SkillExtractor.extract_skills(resume_text)
+        vacancy_skills = SkillExtractor.extract_skills(vacancy_text)
+
+        analysis = MatchAnalyzer.calculate_match_score(
+            resume_skills, vacancy_skills, resume_text, vacancy_text
+        )
+
+        recommendations = RecommendationEngine.generate_recommendations(analysis)
+
+        salary_text = "Не указана"
+        if vacancy_data[3] and vacancy_data[4]:
+            salary_text = f"{vacancy_data[3]:,} - {vacancy_data[4]:,} ₽"
+        elif vacancy_data[3]:
+            salary_text = f"от {vacancy_data[3]:,} ₽"
+        elif vacancy_data[4]:
+            salary_text = f"до {vacancy_data[4]:,} ₽"
+
+        return {
+            "resume_id": resume_id,
+            "vacancy_id": vacancy_id,
+            "vacancy_title": vacancy_data[0],
+            "vacancy_description": vacancy_data[1],
+            "vacancy_salary": salary_text,
+            "vacancy_location": vacancy_data[5] or "Не указана",
+            "match_percentage": analysis["total_score"],
+            "skills_match_percentage": analysis["skills_score"],
+            "matched_skills": analysis["matched_skills"],
+            "missing_skills": analysis["missing_skills"],
+            "critical_missing_skills": analysis["critical_missing"],
+            "extra_skills": analysis["extra_skills"],
+            "extra_skills_bonus": analysis["extra_bonus"],
+            "critical_penalty": analysis["critical_penalty"],
+            "recommendations": recommendations,
+            "stats": {
+                "total_resume_skills": len(resume_skills),
+                "total_vacancy_skills": len(vacancy_skills),
+                "matched_count": len(analysis["matched_skills"]),
+                "missing_count": len(analysis["missing_skills"]),
+                "extra_count": len(analysis["extra_skills"])
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Ошибка в analyze_match: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.get("/api/skills/extract")
+def extract_skills_from_text(text: str):
+    """Endpoint для тестирования извлечения навыков"""
+    skills = SkillExtractor.extract_skills(text)
+    categories = SkillExtractor.categorize_skills(skills)
+
+    return {
+        "text": text,
+        "extracted_skills": sorted(list(skills)),
+        "total_count": len(skills),
+        "categorized": categories
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

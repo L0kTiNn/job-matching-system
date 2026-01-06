@@ -54,6 +54,7 @@
             display: flex;
             gap: 15px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -65,6 +66,7 @@
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            transition: all 0.3s ease;
         }
 
         .btn-edit {
@@ -74,6 +76,7 @@
 
         .btn-edit:hover {
             background: #e55a2b;
+            transform: translateY(-2px);
         }
 
         .btn-back {
@@ -83,6 +86,94 @@
 
         .btn-back:hover {
             background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+
+        .match-percentage {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-size: 24px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .match-percentage.excellent {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+        }
+
+        .match-percentage.good {
+            background: linear-gradient(135deg, #ffa726 0%, #ffb74d 100%);
+        }
+
+        .match-percentage.medium {
+            background: linear-gradient(135deg, #ffc107 0%, #ffd54f 100%);
+        }
+
+        .match-percentage.low {
+            background: linear-gradient(135deg, #78909c 0%, #90a4ae 100%);
+        }
+
+
+        .skill-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .skill-matched {
+            background: #fff4e6;
+            color: #ff6b35;
+            border: 2px solid #ff8c42;
+        }
+
+        .skill-critical {
+            background: #2c2c2c;
+            color: #ff6b35;
+            border: 2px solid #ff6b35;
+            font-weight: 600;
+        }
+
+        .skill-missing {
+            background: #f5f5f5;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+
+        .skill-extra {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #66bb6a;
+        }
+
+
+        .recommendations-box {
+            background: #f5f5f5;
+            color: #2c2c2c;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+            border: 2px solid #ff6b35;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .recommendations-box h3 {
+            color: #ff6b35 !important;
+            border: none !important;
+            padding: 0 !important;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .recommendations-box .content {
+            color: #2c2c2c;
+            line-height: 1.8;
+            white-space: pre-line;
         }
 
         .loading {
@@ -145,7 +236,7 @@
             </div>
 
             <div class="vacancy-actions">
-                <a href="#" id="editBtn" class="btn btn-edit"> Редактировать</a>
+                <a href="#" id="editBtn" class="btn btn-edit">✏ Редактировать</a>
                 <a href="vacancies.html" class="btn btn-back">← Назад к списку</a>
             </div>
         </div>

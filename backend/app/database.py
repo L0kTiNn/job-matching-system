@@ -123,7 +123,7 @@ class DatabaseManager:
             limit: количество результатов
 
         Returns:
-            Список кортежей (vacancy_id, title, similarity_score)
+            Список кортежей (vacancy_id, title, description, salary_min, salary_max, location, similarity)
         """
         query = """
         SELECT 
@@ -149,21 +149,24 @@ class DatabaseManager:
 
     def find_similar_resumes(self, vacancy_id: int, limit: int = 10) -> List[Tuple]:
         """
-        Поиск похожих резюме для вакансии
+        🔥 ИСПРАВЛЕНО! Поиск похожих резюме для вакансии через cosine similarity
 
         Args:
             vacancy_id: ID вакансии
             limit: количество результатов
 
         Returns:
-            Список подходящих резюме
+            Список кортежей: (id, title, skills, experience, education,
+                             desired_position, desired_salary, location, similarity)
         """
         query = """
         SELECT 
             r.id,
             r.title,
-            r.summary,
             r.skills,
+            r.experience,
+            r.education,
+            r.desired_position,
             r.desired_salary,
             r.location,
             1 - (r.embedding <=> v.embedding) as similarity
@@ -174,24 +177,6 @@ class DatabaseManager:
           AND r.embedding IS NOT NULL
           AND v.embedding IS NOT NULL
         ORDER BY r.embedding <=> v.embedding
-        LIMIT %s
-        """
-
-        self.cursor.execute(query, (vacancy_id, limit))
-        return self.cursor.fetchall()
-
-    def find_similar_resumes(self, vacancy_id: int, limit: int = 10):
-        """Найти похожие резюме для вакансии"""
-        query = """
-        SELECT 
-            r.id, r.title, r.skills, r.experience, r.education, 
-            r.desired_position, r.desired_salary, r.location,
-            1 - (v.embedding <=> r.embedding) as similarity
-        FROM resumes r, vacancies v
-        WHERE v.id = %s 
-          AND r.embedding IS NOT NULL
-          AND v.embedding IS NOT NULL
-        ORDER BY v.embedding <=> r.embedding
         LIMIT %s
         """
 
