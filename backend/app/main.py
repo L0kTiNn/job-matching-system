@@ -628,57 +628,95 @@ def get_vacancy_recommendations(resume_id: int, limit: int = 10):
 @app.get("/api/vacancies/{vacancy_id}/candidates")
 def get_resume_recommendations(vacancy_id: int, limit: int = 10):
     """
-    🚀 ОБНОВЛЕНО! Получить рекомендации кандидатов для вакансии
-    Использует ТУ ЖЕ логику что и подбор вакансий по резюме!
+    🚀 ПОЛНОСТЬЮ ПЕРЕРАБОТАНО!
+    Использует SkillExtractor для подсчёта процента (как для вакансий!)
     """
     db = DatabaseManager()
 
     try:
         db.connect()
 
-        # Проверяем существование вакансии
-        db.cursor.execute(
-            "SELECT id, title, description FROM vacancies WHERE id = %s",
-            (vacancy_id,)
-        )
-        vacancy_data = db.cursor.fetchone()
+        # Получаем вакансию
+        db.cursor.execute("""
+            SELECT id, title, description, requirements, salary_min, salary_max, location
+            FROM vacancies WHERE id = %s
+        """, (vacancy_id,))
 
+        vacancy_data = db.cursor.fetchone()
         if not vacancy_data:
             raise HTTPException(status_code=404, detail="Вакансия не найдена")
 
-        # ИСПОЛЬЗУЕМ ТОТ ЖЕ МЕТОД что и для вакансий!
-        similar = db.find_similar_resumes(vacancy_id, limit)
+        # Формируем текст вакансии для анализа
+        vacancy_text = " ".join(filter(None, [
+            vacancy_data[1],  # title
+            vacancy_data[2],  # description
+            vacancy_data[3]   # requirements
+        ]))
 
-        if not similar:
-            return {
-                "vacancy": {
-                    "id": vacancy_data[0],
-                    "title": vacancy_data[1],
-                    "description": vacancy_data[2]
-                },
-                "candidates": [],
-                "total": 0
-            }
+        # Извлекаем навыки вакансии
+        vacancy_skills = SkillExtractor.extract_skills(vacancy_text)
 
+        print(f"🔍 Навыки вакансии: {vacancy_skills}")
+
+        # Получаем ВСЕ активные резюме
+        db.cursor.execute("""
+            SELECT id, title, summary, skills, experience, education, 
+                   desired_position, desired_salary, location
+            FROM resumes
+            WHERE is_active = true
+            ORDER BY created_at DESC
+        """)
+
+        all_resumes = db.cursor.fetchall()
+
+        # Анализируем КАЖДОЕ резюме через SkillExtractor
         candidates = []
-        for row in similar:
-            # Распаковываем результат (8 полей + similarity)
-            resume_id, title, skills, experience, education, desired_position, desired_salary, location, similarity = row
 
-            candidates.append({
-                "resume_id": resume_id,
-                "full_name": f"Кандидат #{resume_id}",
-                "title": title or "Без названия",
-                "desired_position": desired_position or "Не указана",
-                "skills": skills or "Не указаны",
-                "experience": experience or "Не указан",
-                "education": education or "Не указано",
-                "contact_email": "candidate@example.com",
-                "contact_phone": "+7 (XXX) XXX-XX-XX",
-                "match_percentage": round(similarity * 100, 1),  #
-                "desired_salary": desired_salary,
-                "location": location or "Не указана"
-            })
+        for resume_row in all_resumes:
+            resume_id, title, summary, skills, experience, education, desired_position, desired_salary, location = resume_row
+
+            # Формируем текст резюме
+            resume_text = " ".join(filter(None, [
+                title, summary, skills, experience, education, desired_position
+            ]))
+
+            # Извлекаем навыки резюме
+            resume_skills = SkillExtractor.extract_skills(resume_text)
+
+            # 🔥 СЧИТАЕМ СОВПАДЕНИЕ ЧЕРЕЗ SkillExtractor!
+            analysis = MatchAnalyzer.calculate_match_score(
+                resume_skills,
+                vacancy_skills,
+                resume_text,
+                vacancy_text
+            )
+
+            match_percentage = analysis["total_score"]
+
+            # Добавляем в список если есть хоть какое-то совпадение
+            if match_percentage > 0:
+                candidates.append({
+                    "resume_id": resume_id,
+                    "full_name": f"Кандидат #{resume_id}",
+                    "title": title or "Без названия",
+                    "desired_position": desired_position or "Не указана",
+                    "skills": skills or "Не указаны",
+                    "experience": experience or "Не указан",
+                    "education": education or "Не указано",
+                    "contact_email": "candidate@example.com",
+                    "contact_phone": "+7 (XXX) XXX-XX-XX",
+                    "match_percentage": round(match_percentage, 1),  # 🔥 ИЗ SkillExtractor!
+                    "desired_salary": desired_salary,
+                    "location": location or "Не указана"
+                })
+
+        # Сортируем по убыванию процента совпадения
+        candidates.sort(key=lambda x: x["match_percentage"], reverse=True)
+
+        # Ограничиваем количество результатов
+        candidates = candidates[:limit]
+
+        print(f"✅ Найдено кандидатов: {len(candidates)}")
 
         return {
             "vacancy": {
@@ -1123,6 +1161,15 @@ def analyze_match(resume_id: int, vacancy_id: int):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+
+@app.get("/api/vacancies/{vacancy_id}/resumes/{resume_id}/match-analysis")
+def analyze_candidate_match(vacancy_id: int, resume_id: int):
+    """
+    🚀 ЗЕРКАЛЬНЫЙ анализ: Вакансия → Резюме (для работодателя)
+    Использует ту же логику что и анализ резюме → вакансия
+    """
+    return analyze_match(resume_id, vacancy_id)
 
 
 @app.get("/api/skills/extract")

@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Подходящие кандидаты - РабоtаPlus</title>
     <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .vacancy-card {
+            transition: all 0.3s ease;
+        }
+
+        .vacancy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .match-badge {
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -18,7 +43,7 @@
                 <li><a href="profile.html">Профиль</a></li>
             </ul>
             <div class="nav-actions">
-                <a href="vacancies.html" class="btn-register">← На главную</a>
+                <a href="vacancies.html" class="btn-register">← Назад к вакансиям</a>
             </div>
         </nav>
     </header>
@@ -26,7 +51,7 @@
     <!-- Main Content -->
     <div class="container" style="margin-top: 100px; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 40px;">
 
-        <!-- Success Message -->
+        <!-- Vacancy Info -->
         <div class="form-container" style="text-align: center; margin-bottom: 40px; max-width: 800px; margin-left: auto; margin-right: auto;" id="vacancyInfo">
             <h2 style="color: #2d2d2d; margin-bottom: 10px;">Загрузка...</h2>
             <p style="color: #666; font-size: 16px; line-height: 1.6;"></p>
@@ -43,18 +68,19 @@
 
     <script>
         const API_URL = 'http://localhost:8000';
+        let currentVacancyId = null;
 
         async function loadCandidates() {
             const urlParams = new URLSearchParams(window.location.search);
-            const vacancyId = urlParams.get('id');
+            currentVacancyId = urlParams.get('id');
 
-            if (!vacancyId) {
+            if (!currentVacancyId) {
                 showError('ID вакансии не указан');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_URL}/api/vacancies/${vacancyId}/candidates?limit=100`);
+                const response = await fetch(`${API_URL}/api/vacancies/${currentVacancyId}/candidates?limit=100`);
 
                 if (!response.ok) {
                     throw new Error('Ошибка загрузки данных');
@@ -89,50 +115,80 @@
                 return;
             }
 
-            container.innerHTML = candidates.map(candidate => `
-                <div class="vacancy-card" style="position: relative;">
-                    <!-- Процент совпадения -->
-                    <div style="position: absolute; top: 15px; right: 15px; background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(255,107,53,0.3);">
-                        🔥 ${Math.round(candidate.match_percentage)}%
-                    </div>
+            container.innerHTML = candidates.map(candidate => {
+                const matchPercentage = Math.round(candidate.match_percentage || 0);
 
-                    <!-- Название должности -->
-                    <h3 class="vacancy-title" style="margin-top: 10px; max-width: 75%;">${candidate.desired_position || candidate.title || 'Кандидат #' + candidate.resume_id}</h3>
+                // Цвета по стилю сайта
+                let badgeColor = '#ff6b35';
+                let badgeClass = 'excellent';
 
-                    <!-- Краткое описание навыков -->
-                    ${candidate.skills ? `
-                        <p class="vacancy-company">${candidate.skills.substring(0, 100)}${candidate.skills.length > 100 ? '...' : ''}</p>
-                    ` : ''}
+                if (matchPercentage >= 90) {
+                    badgeColor = '#ff6b35';
+                    badgeClass = 'excellent';
+                } else if (matchPercentage >= 70) {
+                    badgeColor = '#2d2d2d';
+                    badgeClass = 'good';
+                } else if (matchPercentage >= 50) {
+                    badgeColor = '#666666';
+                    badgeClass = 'medium';
+                } else {
+                    badgeColor = '#999999';
+                    badgeClass = 'low';
+                }
 
-                    <!-- Опыт и образование -->
-                    <div style="margin: 15px 0; font-size: 14px; color: #666;">
-                        ${candidate.experience ? `<div style="margin-bottom: 8px;"><strong style="color: #2d2d2d;">💼 Опыт:</strong> ${candidate.experience}</div>` : ''}
-                        ${candidate.education ? `<div><strong style="color: #2d2d2d;">🎓 Образование:</strong> ${candidate.education}</div>` : ''}
-                    </div>
+                return `
+                    <div class="vacancy-card" style="position: relative;">
+                        <div class="match-badge ${badgeClass}" style="position: absolute; top: 15px; right: 15px; background: ${badgeColor}; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                            🎯 ${matchPercentage}%
+                        </div>
 
-                    <!-- Детали (зарплата и локация) -->
-                    <div class="vacancy-details">
-                        ${candidate.location ? `
-                            <div class="detail-item">
-                                📍 ${candidate.location}
-                            </div>
+                        <h3 class="vacancy-title" style="margin-top: 10px; max-width: 75%;">
+                            ${candidate.desired_position || candidate.title || 'Кандидат #' + candidate.resume_id}
+                        </h3>
+
+                        ${candidate.skills ? `
+                            <p class="vacancy-company" style="color: #666; margin-top: 10px; line-height: 1.6;">
+                                ${candidate.skills.substring(0, 120)}${candidate.skills.length > 120 ? '...' : ''}
+                            </p>
                         ` : ''}
-                        ${candidate.desired_salary ? `
-                            <div class="detail-item">
-                                💰 от ${candidate.desired_salary.toLocaleString()} ₽
-                            </div>
-                        ` : ''}
-                    </div>
 
-                    <!-- Кнопка связаться -->
-                    <button class="btn-primary" style="width: 100%; margin-top: 20px; background: #ff6b35; transition: all 0.3s ease;"
-                            onmouseover="this.style.background='#e55a2b'"
-                            onmouseout="this.style.background='#ff6b35'"
-                            onclick="contactCandidate(${candidate.resume_id}, '${candidate.contact_email}', '${candidate.contact_phone}')">
-                        ✉ Связаться с кандидатом
-                    </button>
-                </div>
-            `).join('');
+                        <div style="margin: 15px 0; font-size: 14px; color: #666;">
+                            ${candidate.experience ? `
+                                <div style="margin-bottom: 8px;">
+                                    <strong style="color: #2d2d2d;">💼 Опыт:</strong> ${candidate.experience.substring(0, 60)}${candidate.experience.length > 60 ? '...' : ''}
+                                </div>
+                            ` : ''}
+                            ${candidate.education ? `
+                                <div>
+                                    <strong style="color: #2d2d2d;">🎓 Образование:</strong> ${candidate.education.substring(0, 60)}${candidate.education.length > 60 ? '...' : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="vacancy-details" style="margin-top: 15px;">
+                            ${candidate.location ? `
+                                <div class="detail-item">📍 ${candidate.location}</div>
+                            ` : ''}
+                            ${candidate.desired_salary ? `
+                                <div class="detail-item">💰 от ${candidate.desired_salary.toLocaleString()} ₽</div>
+                            ` : ''}
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="btn-details" style="flex: 1;" onclick="showDetails(${candidate.resume_id})">
+                                👁 Детали
+                            </button>
+                            <button class="btn-apply" style="flex: 1;" onclick="contactCandidate(${candidate.resume_id}, '${candidate.contact_email || 'N/A'}', '${candidate.contact_phone || 'N/A'}')">
+                                ✉ Связаться
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showDetails(resumeId) {
+            window.location.href = `view-resume.html?id=${resumeId}&vacancy_id=${currentVacancyId}`;
         }
 
         function contactCandidate(resumeId, email, phone) {
@@ -145,14 +201,14 @@
                 <div class="form-container" style="text-align: center;">
                     <h2 style="color: #ff4444; margin-bottom: 10px;">❌ Ошибка</h2>
                     <p style="color: #666;">${message}</p>
-                    <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none; background: #ff6b35;">
+                    <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none;">
                         ← Вернуться к вакансиям
                     </a>
                 </div>
             `;
         }
 
-        //
+        // Загружаем данные при загрузке страницы
         window.addEventListener('load', loadCandidates);
     </script>
 </body>

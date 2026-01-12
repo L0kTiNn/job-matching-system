@@ -624,10 +624,10 @@ nav {
 .btn-details {
     flex: 1;
     padding: 14px;
-    background: #2d2d2d;
-    color: white;
+    background: #e0e0e0;
+    color: #555;
     border: none;
-    border-radius: 8px;
+    border-radius: 25px;
     font-weight: 600;
     font-size: 15px;
     cursor: pointer;
@@ -635,7 +635,7 @@ nav {
 }
 
 .btn-details:hover {
-    background: #1a1a1a;
+    background: #d0d0d0;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(45, 45, 45, 0.3);
 }
