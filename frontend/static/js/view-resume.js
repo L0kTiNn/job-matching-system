@@ -56,14 +56,14 @@ function displayResume(resume) {
     // Мета-информация
     let metaInfo = [];
     if (resume.location) {
-        metaInfo.push(`📍 ${resume.location}`);
+        metaInfo.push(` ${resume.location}`);
     }
     if (resume.desired_salary) {
-        metaInfo.push(`💰 от ${resume.desired_salary.toLocaleString()} ₽`);
+        metaInfo.push(` от ${resume.desired_salary.toLocaleString()} ₽`);
     }
     if (resume.created_at) {
         const date = new Date(resume.created_at);
-        metaInfo.push(`📅 Создано: ${date.toLocaleDateString('ru-RU')}`);
+        metaInfo.push(` Создано: ${date.toLocaleDateString('ru-RU')}`);
     }
 
     if (metaInfo.length > 0) {

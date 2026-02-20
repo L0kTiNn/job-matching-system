@@ -1,5 +1,5 @@
 import sys
-sys.path.append('.')  # 🔥 ДОБАВЬ ЭТУ СТРОКУ!
+sys.path.append('.')
 
 from backend.app.database import DatabaseManager
 
@@ -7,7 +7,7 @@ db = DatabaseManager()
 db.connect()
 
 # Проверяем эмбеддинги вакансий
-print("📊 ВАКАНСИИ С ЭМБЕДДИНГАМИ:")
+print(" ВАКАНСИИ С ЭМБЕДДИНГАМИ:")
 db.cursor.execute("""
     SELECT id, title, 
            CASE WHEN embedding IS NULL THEN 'НЕТ' ELSE 'ЕСТЬ' END as has_embedding
@@ -18,7 +18,7 @@ for row in db.cursor.fetchall():
     print(f"  Вакансия #{row[0]}: {row[1]} - эмбеддинг: {row[2]}")
 
 # Проверяем эмбеддинги резюме
-print("\n📊 РЕЗЮМЕ С ЭМБЕДДИНГАМИ:")
+print("\n РЕЗЮМЕ С ЭМБЕДДИНГАМИ:")
 db.cursor.execute("""
     SELECT id, title,
            CASE WHEN embedding IS NULL THEN 'НЕТ' ELSE 'ЕСТЬ' END as has_embedding
@@ -29,7 +29,7 @@ for row in db.cursor.fetchall():
     print(f"  Резюме #{row[0]}: {row[1]} - эмбеддинг: {row[2]}")
 
 # Проверяем similarity напрямую
-print("\n🔥 ПРЯМАЯ ПРОВЕРКА SIMILARITY:")
+print("\n ПРЯМАЯ ПРОВЕРКА SIMILARITY:")
 print("Вакансия 'Data Scientist' → Резюме 'Data Scientist':")
 
 db.cursor.execute("""
@@ -52,6 +52,6 @@ if result:
     print(f"  Вакансия: {result[1]}")
     print(f"  Резюме: {result[3]}")
 else:
-    print("  ❌ НЕТ ДАННЫХ!")
+    print("   НЕТ ДАННЫХ!")
 
 db.close()

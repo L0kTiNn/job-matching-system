@@ -21,9 +21,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from functools import lru_cache
 
-print("🔄 Загрузка multilingual модели для сравнения навыков...")
+print(" Загрузка multilingual модели для сравнения навыков...")
 skill_comparison_model = SentenceTransformer('paraphrase-multilingual-mpnet-base-v2')
-print("✅ Модель для навыков загружена!")
+print(" Модель для навыков загружена!")
 
 skill_embeddings_cache = {}
 
@@ -340,7 +340,7 @@ class MatchAnalyzer:
         НОВОЕ: Использует семантическое сравнение через эмбеддинги!
         """
 
-        # 🚀 УМНОЕ сравнение с учётом синонимов и переводов!
+        #  УМНОЕ сравнение с учётом синонимов и переводов!
         matched_skills = []
         missing_skills = []
         used_resume_skills = set()
@@ -422,9 +422,9 @@ class RecommendationEngine:
         # 1. Отличное совпадение (90%+)
         if score >= 90:
             return (
-                f"🎉 **Отличное совпадение!** Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
-                f"✅ Совпало навыков: {len(matched)}\n"
-                f"💡 У вас есть {len(extra)} дополнительных навыков, что выделяет вас среди других кандидатов!\n\n"
+                f" Отличное совпадение! Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
+                f" Совпало навыков: {len(matched)}\n"
+                f" У вас есть {len(extra)} дополнительных навыков, что выделяет вас среди других кандидатов!\n\n"
                 f"**Рекомендация:** Смело откликайтесь! Высокие шансы на приглашение."
             )
 
@@ -435,12 +435,12 @@ class RecommendationEngine:
                 top_missing = missing[:3]
                 tips.append(f"Добавьте в резюме: {', '.join(top_missing)}")
             if critical:
-                tips.append(f"⚠️ Критично изучить: {', '.join(critical)}")
+                tips.append(f" Критично изучить: {', '.join(critical)}")
 
             recommendations_text = "\n".join([f"• {tip}" for tip in tips])
 
             return (
-                f"✅ **Хорошее совпадение!** Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
+                f" Хорошее совпадение! Ваше резюме на {round(score)}% соответствует требованиям.\n\n"
                 f"Совпало {len(matched)} из {len(matched) + len(missing)} требуемых навыков.\n\n"
                 f"**Как улучшить резюме:**\n{recommendations_text}\n\n"
                 f"Это повысит ваши шансы на приглашение до ~95%!"
@@ -450,16 +450,16 @@ class RecommendationEngine:
         elif score >= 50:
             if critical:
                 return (
-                    f"💡 **Среднее совпадение** ({round(score)}%). У вас есть потенциал!\n\n"
-                    f"✅ Совпало: {len(matched)} навыков\n"
-                    f"❌ Не хватает: {len(missing)} навыков\n\n"
-                    f"**⚠️ Критично важно изучить:**\n"
+                    f" Среднее совпадение ({round(score)}%). У вас есть потенциал!\n\n"
+                    f" Совпало: {len(matched)} навыков\n"
+                    f" Не хватает: {len(missing)} навыков\n\n"
+                    f"** Критично важно изучить:**\n"
                     + "\n".join([f"• {skill}" for skill in critical[:5]]) +
-                    f"\n\n**Рекомендация:** Пройдите курсы по этим технологиям и обновите резюме через 1-2 месяца."
+                    f"\n\nРекомендация: Пройдите курсы по этим технологиям и обновите резюме через 1-2 месяца."
                 )
             else:
                 return (
-                    f"💡 **Среднее совпадение** ({round(score)}%). Можно улучшить!\n\n"
+                    f" Среднее совпадение ({round(score)}%). Можно улучшить!\n\n"
                     f"**Добавьте в резюме навыки:**\n"
                     + "\n".join([f"• {skill}" for skill in missing[:5]]) +
                     f"\n\nЭто повысит совпадение до ~{min(round(score) + 20, 95)}%!"
@@ -468,11 +468,11 @@ class RecommendationEngine:
         # 4. Низкое совпадение (<50%)
         else:
             return (
-                f"⚠️ **Низкое совпадение** ({round(score)}%). Эта вакансия может быть сложной.\n\n"
+                f" Низкое совпадение ({round(score)}%). Эта вакансия может быть сложной.\n\n"
                 f"Не хватает {len(missing)} ключевых навыков из {len(missing) + len(matched)}.\n\n"
-                f"**Критичные навыки для изучения:**\n"
+                f"Критичные навыки для изучения:\n"
                 + "\n".join([f"• {skill}" for skill in (critical or missing)[:7]]) +
-                f"\n\n**Рекомендация:** Рассмотрите вакансии, более подходящие под ваш текущий опыт, "
+                f"\n\nРекомендация: Рассмотрите вакансии, более подходящие под ваш текущий опыт, "
                 f"или инвестируйте время в изучение недостающих технологий."
             )
 
@@ -628,7 +628,7 @@ def get_vacancy_recommendations(resume_id: int, limit: int = 10):
 @app.get("/api/vacancies/{vacancy_id}/candidates")
 def get_resume_recommendations(vacancy_id: int, limit: int = 10):
     """
-    🚀 ПОЛНОСТЬЮ ПЕРЕРАБОТАНО!
+
     Использует SkillExtractor для подсчёта процента (как для вакансий!)
     """
     db = DatabaseManager()
@@ -656,7 +656,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
         # Извлекаем навыки вакансии
         vacancy_skills = SkillExtractor.extract_skills(vacancy_text)
 
-        print(f"🔍 Навыки вакансии: {vacancy_skills}")
+        print(f" Навыки вакансии: {vacancy_skills}")
 
         # Получаем ВСЕ активные резюме
         db.cursor.execute("""
@@ -683,7 +683,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
             # Извлекаем навыки резюме
             resume_skills = SkillExtractor.extract_skills(resume_text)
 
-            # 🔥 СЧИТАЕМ СОВПАДЕНИЕ ЧЕРЕЗ SkillExtractor!
+            #  СЧИТАЕМ СОВПАДЕНИЕ ЧЕРЕЗ SkillExtractor!
             analysis = MatchAnalyzer.calculate_match_score(
                 resume_skills,
                 vacancy_skills,
@@ -705,7 +705,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
                     "education": education or "Не указано",
                     "contact_email": "candidate@example.com",
                     "contact_phone": "+7 (XXX) XXX-XX-XX",
-                    "match_percentage": round(match_percentage, 1),  # 🔥 ИЗ SkillExtractor!
+                    "match_percentage": round(match_percentage, 1),  #  ИЗ SkillExtractor!
                     "desired_salary": desired_salary,
                     "location": location or "Не указана"
                 })
@@ -716,7 +716,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
         # Ограничиваем количество результатов
         candidates = candidates[:limit]
 
-        print(f"✅ Найдено кандидатов: {len(candidates)}")
+        print(f" Найдено кандидатов: {len(candidates)}")
 
         return {
             "vacancy": {
@@ -731,7 +731,7 @@ def get_resume_recommendations(vacancy_id: int, limit: int = 10):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Ошибка в get_resume_recommendations: {e}")
+        print(f" Ошибка в get_resume_recommendations: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -1077,7 +1077,7 @@ def update_vacancy(vacancy_id: int, vacancy: VacancyUpdate):
 @app.get("/api/resumes/{resume_id}/vacancies/{vacancy_id}/match-analysis")
 def analyze_match(resume_id: int, vacancy_id: int):
     """
-    🚀 УЛУЧШЕННЫЙ детальный анализ совпадения резюме и вакансии
+     УЛУЧШЕННЫЙ детальный анализ совпадения резюме и вакансии
     Использует multilingual эмбеддинги для сравнения навыков!
     """
     db = DatabaseManager()
@@ -1166,7 +1166,7 @@ def analyze_match(resume_id: int, vacancy_id: int):
 @app.get("/api/vacancies/{vacancy_id}/resumes/{resume_id}/match-analysis")
 def analyze_candidate_match(vacancy_id: int, resume_id: int):
     """
-    🚀 ЗЕРКАЛЬНЫЙ анализ: Вакансия → Резюме (для работодателя)
+     ЗЕРКАЛЬНЫЙ анализ: Вакансия → Резюме (для работодателя)
     Использует ту же логику что и анализ резюме → вакансия
     """
     return analyze_match(resume_id, vacancy_id)

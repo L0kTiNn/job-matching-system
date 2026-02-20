@@ -139,7 +139,7 @@
                 return `
                     <div class="vacancy-card" style="position: relative;">
                         <div class="match-badge ${badgeClass}" style="position: absolute; top: 15px; right: 15px; background: ${badgeColor}; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                            🎯 ${matchPercentage}%
+                             ${matchPercentage}%
                         </div>
 
                         <h3 class="vacancy-title" style="margin-top: 10px; max-width: 75%;">
@@ -155,22 +155,22 @@
                         <div style="margin: 15px 0; font-size: 14px; color: #666;">
                             ${candidate.experience ? `
                                 <div style="margin-bottom: 8px;">
-                                    <strong style="color: #2d2d2d;">💼 Опыт:</strong> ${candidate.experience.substring(0, 60)}${candidate.experience.length > 60 ? '...' : ''}
+                                    <strong style="color: #2d2d2d;"> Опыт:</strong> ${candidate.experience.substring(0, 60)}${candidate.experience.length > 60 ? '...' : ''}
                                 </div>
                             ` : ''}
                             ${candidate.education ? `
                                 <div>
-                                    <strong style="color: #2d2d2d;">🎓 Образование:</strong> ${candidate.education.substring(0, 60)}${candidate.education.length > 60 ? '...' : ''}
+                                    <strong style="color: #2d2d2d;"> Образование:</strong> ${candidate.education.substring(0, 60)}${candidate.education.length > 60 ? '...' : ''}
                                 </div>
                             ` : ''}
                         </div>
 
                         <div class="vacancy-details" style="margin-top: 15px;">
                             ${candidate.location ? `
-                                <div class="detail-item">📍 ${candidate.location}</div>
+                                <div class="detail-item"> ${candidate.location}</div>
                             ` : ''}
                             ${candidate.desired_salary ? `
-                                <div class="detail-item">💰 от ${candidate.desired_salary.toLocaleString()} ₽</div>
+                                <div class="detail-item"> от ${candidate.desired_salary.toLocaleString()} ₽</div>
                             ` : ''}
                         </div>
 
@@ -192,14 +192,14 @@
         }
 
         function contactCandidate(resumeId, email, phone) {
-            alert(`📋 Контакты кандидата:\n\n📧 Email: ${email}\n📱 Телефон: ${phone}\n\n🆔 ID резюме: ${resumeId}`);
+            alert(` Контакты кандидата:\n\n Email: ${email}\n Телефон: ${phone}\n\n ID резюме: ${resumeId}`);
         }
 
         function showError(message) {
             const container = document.getElementById('candidatesList');
             container.innerHTML = `
                 <div class="form-container" style="text-align: center;">
-                    <h2 style="color: #ff4444; margin-bottom: 10px;">❌ Ошибка</h2>
+                    <h2 style="color: #ff4444; margin-bottom: 10px;"> Ошибка</h2>
                     <p style="color: #666;">${message}</p>
                     <a href="vacancies.html" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none;">
                         ← Вернуться к вакансиям

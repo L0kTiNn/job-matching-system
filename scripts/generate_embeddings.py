@@ -26,12 +26,12 @@ MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
 # ============= ИНИЦИАЛИЗАЦИЯ =============
 
 print("=" * 60)
-print("🚀 ПРОКАЧАННАЯ ГЕНЕРАЦИЯ ЭМБЕДДИНГОВ V2.0")
+print(" ПРОКАЧАННАЯ ГЕНЕРАЦИЯ ЭМБЕДДИНГОВ V2.0")
 print("=" * 60)
-print(f"\n📦 Загрузка модели: {MODEL_NAME}...")
+print(f"\n Загрузка модели: {MODEL_NAME}...")
 
 model = SentenceTransformer(MODEL_NAME)
-print("✅ Модель загружена!\n")
+print(" Модель загружена!\n")
 
 # ============= ФУНКЦИИ =============
 
@@ -70,7 +70,7 @@ def generate_skill_embeddings():
             skills = [normalize_skill(s.strip()) for s in req_str.split(',') if s.strip()]
             all_skills.update(skills)
 
-    print(f"\n📊 Найдено уникальных навыков: {len(all_skills)}\n")
+    print(f"\n Найдено уникальных навыков: {len(all_skills)}\n")
 
     # Создаём таблицу если нет
     cur.execute("""
@@ -106,16 +106,16 @@ def generate_skill_embeddings():
             processed += 1
 
             if processed % 10 == 0:
-                print(f"✅ Обработано: {processed}/{len(all_skills)}")
+                print(f" Обработано: {processed}/{len(all_skills)}")
 
         except Exception as e:
-            print(f"❌ Ошибка для навыка '{skill}': {e}")
+            print(f" Ошибка для навыка '{skill}': {e}")
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f"\n✅ Эмбеддинги сгенерированы для {len(all_skills)} навыков!\n")
+    print(f"\n Эмбеддинги сгенерированы для {len(all_skills)} навыков!\n")
 
 def generate_resume_embeddings():
     """Генерация эмбеддингов для резюме"""
@@ -129,7 +129,7 @@ def generate_resume_embeddings():
 
     cur.execute("SELECT id, title, skills FROM resumes")
     resumes = cur.fetchall()
-    print(f"\n📄 Найдено резюме: {len(resumes)}\n")
+    print(f"\n Найдено резюме: {len(resumes)}\n")
 
     for i, (resume_id, title, skills_str) in enumerate(resumes, 1):
         print(f"[{i}/{len(resumes)}] Резюме ID={resume_id}: {title}")
@@ -151,13 +151,13 @@ def generate_resume_embeddings():
             WHERE id = %s
         """, (resume_embedding.tolist(), resume_id))
 
-        print(f"  ✅ Эмбеддинг сохранён (размерность: {resume_embedding.shape})\n")
+        print(f"   Эмбеддинг сохранён (размерность: {resume_embedding.shape})\n")
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f"✅ Обработано резюме: {len(resumes)}\n")
+    print(f" Обработано резюме: {len(resumes)}\n")
 
 def generate_vacancy_embeddings():
     """Генерация эмбеддингов для вакансий"""
@@ -193,13 +193,13 @@ def generate_vacancy_embeddings():
             WHERE id = %s
         """, (vacancy_embedding.tolist(), vacancy_id))
 
-        print(f"  ✅ Эмбеддинг сохранён (размерность: {vacancy_embedding.shape})\n")
+        print(f"   Эмбеддинг сохранён (размерность: {vacancy_embedding.shape})\n")
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f"✅ Обработано вакансий: {len(vacancies)}\n")
+    print(f" Обработано вакансий: {len(vacancies)}\n")
 
 def test_skill_matching():
     """Тестирование умного сравнения навыков"""
@@ -218,14 +218,14 @@ def test_skill_matching():
         ("react", "vue"),
     ]
 
-    print("\n🧪 Тестовые пары:\n")
+    print("\n Тестовые пары:\n")
 
     for skill1, skill2 in test_pairs:
         emb1 = model.encode(skill1)
         emb2 = model.encode(skill2)
 
         similarity = cosine_similarity([emb1], [emb2])[0][0]
-        match = "✅ СОВПАДАЮТ" if similarity >= 0.75 else "❌ РАЗНЫЕ"
+        match = " СОВПАДАЮТ" if similarity >= 0.75 else " РАЗНЫЕ"
 
         print(f"{skill1:25} ↔ {skill2:25} | {similarity:.2%} | {match}")
 
@@ -246,12 +246,12 @@ def test_recommendations():
         resume = cur.fetchone()
 
         if not resume:
-            print("\n❌ Нет резюме в БД")
+            print("\n Нет резюме в БД")
             return
 
         resume_id, title, skills = resume
 
-        print(f"\n📄 Резюме: {title}")
+        print(f"\n Резюме: {title}")
         print(f"   Навыки: {skills or 'Не указаны'}\n")
 
         cur.execute("""
@@ -271,7 +271,7 @@ def test_recommendations():
             print("❌ Не найдено похожих вакансий")
             return
 
-        print(f"🔍 Найдено {len(results)} подходящих вакансий:\n")
+        print(f" Найдено {len(results)} подходящих вакансий:\n")
 
         for i, (vac_id, vac_title, reqs, loc, sal_min, sal_max, sim) in enumerate(results, 1):
             print(f"{i}. {vac_title}")
@@ -300,14 +300,14 @@ def main():
         generate_vacancy_embeddings()
 
         print("=" * 60)
-        print("✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!")
+        print(" ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!")
         print("=" * 60)
 
         test_skill_matching()
         test_recommendations()
 
     except Exception as e:
-        print(f"\n❌ Ошибка: {e}")
+        print(f"\n Ошибка: {e}")
         import traceback
         traceback.print_exc()
 

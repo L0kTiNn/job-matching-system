@@ -98,7 +98,7 @@
                     <h3 class="vacancy-title">${vacancy.title}</h3>
                     ${vacancy.description ? `<p class="vacancy-company">${vacancy.description.substring(0, 150)}...</p>` : ''}
                     <div class="vacancy-details">
-                        <div class="detail-item">📍 ${vacancy.location || 'Не указано'}</div>
+                        <div class="detail-item"> ${vacancy.location || 'Не указано'}</div>
                     </div>
                     <div class="vacancy-salary">${formatSalary(vacancy.salary_min, vacancy.salary_max)}</div>
 

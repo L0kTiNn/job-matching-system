@@ -62,9 +62,9 @@
                     </div>
 
                     <div class="vacancy-details">
-                        <div class="detail-item">📍 ${resume.location || 'Не указано'}</div>
+                        <div class="detail-item"> ${resume.location || 'Не указано'}</div>
                         ${resume.desired_salary ? `
-                            <div class="detail-item">💰 от ${resume.desired_salary.toLocaleString()} ₽</div>
+                            <div class="detail-item"> от ${resume.desired_salary.toLocaleString()} ₽</div>
                         ` : ''}
                     </div>
 

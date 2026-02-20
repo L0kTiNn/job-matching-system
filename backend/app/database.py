@@ -27,9 +27,9 @@ class DatabaseManager:
         try:
             self.conn = psycopg2.connect(**self.connection_params)
             self.cursor = self.conn.cursor()
-            print("✅ Подключение к БД успешно")
+            print(" Подключение к БД успешно")
         except Exception as e:
-            print(f"❌ Ошибка подключения к БД: {e}")
+            print(f" Ошибка подключения к БД: {e}")
             raise
 
     def close(self):
@@ -149,7 +149,7 @@ class DatabaseManager:
 
     def find_similar_resumes(self, vacancy_id: int, limit: int = 10) -> List[Tuple]:
         """
-        🔥 ИСПРАВЛЕНО! Поиск похожих резюме для вакансии через cosine similarity
+        Поиск похожих резюме для вакансии через cosine similarity
 
         Args:
             vacancy_id: ID вакансии
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
         # Получить вакансии
         vacancies = db.get_all_vacancies()
-        print(f"\n💼 Найдено вакансий: {len(vacancies)}")
+        print(f"\n Найдено вакансий: {len(vacancies)}")
         for vacancy in vacancies:
             print(f"  - {vacancy['title']} (ID: {vacancy['id']})")
 

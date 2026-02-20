@@ -57,7 +57,7 @@ def create_vacancies():
         }
     ]
 
-    print("🚀 Создаем вакансии...")
+    print(" Создаем вакансии...")
 
     for v in vacancies:
         try:
@@ -69,12 +69,12 @@ def create_vacancies():
             response = requests.post(f"{API_URL}/vacancies/", json=v)
 
             if response.status_code == 200:
-                print(f"✅ Создана: {v['title']}")
+                print(f" Создана: {v['title']}")
             else:
-                print(f"❌ Ошибка {response.status_code}: {response.text}")
+                print(f" Ошибка {response.status_code}: {response.text}")
 
         except Exception as e:
-            print(f"❌ Ошибка соединения: {e}")
+            print(f" Ошибка соединения: {e}")
 
 
 if __name__ == "__main__":

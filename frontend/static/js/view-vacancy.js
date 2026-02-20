@@ -37,14 +37,14 @@ function displayVacancy(vacancy) {
     document.getElementById('vacancyContent').style.display = 'block';
 
     document.getElementById('vacancyTitle').textContent = vacancy.title;
-    document.getElementById('vacancyLocation').textContent = `📍 ${vacancy.location || 'Не указано'}`;
+    document.getElementById('vacancyLocation').textContent = ` ${vacancy.location || 'Не указано'}`;
 
     const salaryText = formatSalary(vacancy.salary_min, vacancy.salary_max);
-    document.getElementById('vacancySalary').textContent = ` | 💰 ${salaryText}`;
+    document.getElementById('vacancySalary').textContent = ` |  ${salaryText}`;
 
     if (vacancy.created_at) {
         const date = new Date(vacancy.created_at);
-        document.getElementById('vacancyDate').textContent = ` | 📅 ${date.toLocaleDateString('ru-RU')}`;
+        document.getElementById('vacancyDate').textContent = ` |  ${date.toLocaleDateString('ru-RU')}`;
     }
 
     document.getElementById('vacancyDescription').textContent = vacancy.description || 'Описание не указано';
@@ -85,16 +85,16 @@ function displayVacancyWithAnalysis(data) {
 
     //  Определяем класс бейджа
     let badgeClass = 'low';
-    let emoji = '⚠️';
+    let emoji = '';
     if (matchPercent >= 90) {
         badgeClass = 'excellent';
-        emoji = '🔥';
+        emoji = '';
     } else if (matchPercent >= 70) {
         badgeClass = 'good';
-        emoji = '✅';
+        emoji = '';
     } else if (matchPercent >= 50) {
         badgeClass = 'medium';
-        emoji = '💡';
+        emoji = '';
     }
 
     container.innerHTML = `
@@ -103,8 +103,8 @@ function displayVacancyWithAnalysis(data) {
             <div style="flex: 1;">
                 <h1 class="vacancy-title">${data.vacancy_title}</h1>
                 <div class="vacancy-meta">
-                    <span>📍 ${data.vacancy_location}</span>
-                    <span> | 💰 ${data.vacancy_salary}</span>
+                    <span> ${data.vacancy_location}</span>
+                    <span> |  ${data.vacancy_salary}</span>
                 </div>
             </div>
             <div class="match-percentage ${badgeClass}">
@@ -114,14 +114,14 @@ function displayVacancyWithAnalysis(data) {
 
         <!-- Описание вакансии -->
         <div class="vacancy-section" style="margin-top: 30px;">
-            <h3>📄 Описание вакансии</h3>
+            <h3> Описание вакансии</h3>
             <p>${data.vacancy_description || 'Описание не указано'}</p>
         </div>
 
         <!-- Совпавшие навыки -->
         <div class="vacancy-section">
             <h3 style="border-left-color: #ff6b35; color: #ff6b35;">
-                ✅ Ваши навыки совпали (${data.matched_skills.length})
+                 Ваши навыки совпали (${data.matched_skills.length})
             </h3>
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                 ${data.matched_skills.length > 0
@@ -139,12 +139,12 @@ function displayVacancyWithAnalysis(data) {
         ${data.critical_missing_skills && data.critical_missing_skills.length > 0 ? `
             <div class="vacancy-section">
                 <h3 style="border-left-color: #2c2c2c; color: #2c2c2c;">
-                    ⚠️ Критичные навыки, которых не хватает (${data.critical_missing_skills.length})
+                     Критичные навыки, которых не хватает (${data.critical_missing_skills.length})
                 </h3>
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                     ${data.critical_missing_skills.map(skill => `
                         <span class="skill-badge skill-critical">
-                            ⚠️ ${skill}
+                             ${skill}
                         </span>
                     `).join('')}
                 </div>
@@ -154,7 +154,7 @@ function displayVacancyWithAnalysis(data) {
         <!-- Недостающие навыки -->
         <div class="vacancy-section">
             <h3 style="border-left-color: #999; color: #666;">
-                ❌ Навыки, которых не хватает (${data.missing_skills.length})
+                 Навыки, которых не хватает (${data.missing_skills.length})
             </h3>
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                 ${data.missing_skills.length > 0
@@ -163,7 +163,7 @@ function displayVacancyWithAnalysis(data) {
                             ✗ ${skill}
                         </span>
                     `).join('')
-                    : '<p style="color: #28a745; font-weight: 600;">🎉 Все требуемые навыки присутствуют!</p>'
+                    : '<p style="color: #28a745; font-weight: 600;"> Все требуемые навыки присутствуют!</p>'
                 }
             </div>
         </div>
@@ -172,7 +172,7 @@ function displayVacancyWithAnalysis(data) {
         ${data.extra_skills.length > 0 ? `
             <div class="vacancy-section">
                 <h3 style="border-left-color: #66bb6a; color: #2e7d32;">
-                    💼 Ваши дополнительные навыки (+${data.extra_skills_bonus || 0}%)
+                     Ваши дополнительные навыки (+${data.extra_skills_bonus || 0}%)
                 </h3>
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                     ${data.extra_skills.map(skill => `
@@ -186,7 +186,7 @@ function displayVacancyWithAnalysis(data) {
 
         <!-- Рекомендации -->
         <div class="recommendations-box">
-            <h3>💡 Персонализированные рекомендации</h3>
+            <h3> Персонализированные рекомендации</h3>
             <div class="content">${data.recommendations}</div>
         </div>
 
@@ -197,7 +197,7 @@ function displayVacancyWithAnalysis(data) {
                 ✉ Откликнуться на вакансию
             </button>
             <a href="edit-resume.html?id=${data.resume_id}" class="btn btn-edit" style="background: #6c757d;">
-                ✏️ Улучшить резюме
+                 Улучшить резюме
             </a>
             <a href="javascript:history.back()" class="btn btn-back">
                 ← Назад
@@ -220,7 +220,7 @@ function showError(message) {
     document.getElementById('error').style.display = 'block';
     document.getElementById('error').innerHTML = `
         <div class="error-message">
-            ❌ ${message}
+             ${message}
         </div>
         <a href="vacancies.html" class="btn btn-back" style="margin-top: 20px; display: inline-block;">
             ← Вернуться к списку вакансий
@@ -230,6 +230,6 @@ function showError(message) {
 
 function applyToVacancy(vacancyId) {
     if (confirm(`Отправить отклик на вакансию #${vacancyId}?`)) {
-        alert('✅ Отклик отправлен! (Функционал сохранения откликов в разработке)');
+        alert(' Отклик отправлен! (Функционал сохранения откликов в разработке)');
     }
 }

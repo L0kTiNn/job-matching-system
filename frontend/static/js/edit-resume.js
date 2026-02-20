@@ -8,7 +8,7 @@ if (!resumeId) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('message').innerHTML = `
         <div class="error-message">
-            ❌ ID резюме не указан
+             ID резюме не указан
         </div>
     `;
 } else {

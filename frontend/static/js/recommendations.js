@@ -41,8 +41,7 @@ function displayResumeInfo(id) {
             <h2> Резюме успешно создано!</h2>
             <p>
                 ID резюме: <strong>${id}</strong><br>
-                 Система проанализировала ваше резюме с помощью <strong>искусственного интеллекта</strong>
-                и подобрала наиболее подходящие вакансии с учётом семантического сравнения навыков.
+                 Система проанализировала ваше резюме и подобрала наиболее подходящие вакансии с учётом семантического сравнения навыков.
             </p>
         </div>
     `;
@@ -65,7 +64,7 @@ async function displayRecommendationsWithMatches(recommendations) {
     // Сначала отрисовываем карточки
     container.innerHTML = recommendations.map(vacancy => `
         <div class="vacancy-card loading" id="vacancy-${vacancy.id}">
-            <div class="match-badge loading">⏳ Анализ...</div>
+            <div class="match-badge loading"> Анализ...</div>
 
             <h3 class="vacancy-title">${vacancy.title}</h3>
 
@@ -77,7 +76,7 @@ async function displayRecommendationsWithMatches(recommendations) {
 
             <div class="vacancy-details">
                 <div class="detail-item">
-                    📍 <span>${vacancy.location || 'Не указано'}</span>
+                     <span>${vacancy.location || 'Не указано'}</span>
                 </div>
             </div>
 
@@ -181,7 +180,7 @@ async function loadMatchPercentage(vacancyId) {
                     const matchInfo = document.createElement('div');
                     matchInfo.className = 'matched-skills-box';
                     matchInfo.innerHTML = `
-                        <strong>✨ Совпадающие навыки:</strong><br>
+                        <strong> Совпадающие навыки:</strong><br>
                         <span class="matched-skills-list">${skillsPreview}${moreSkills}</span>
                     `;
                     detailsDiv.appendChild(matchInfo);
@@ -203,7 +202,7 @@ async function loadMatchPercentage(vacancyId) {
             if (badge) {
                 badge.classList.remove('loading');
                 badge.classList.add('low');
-                badge.textContent = '❓ N/A';
+                badge.textContent = ' N/A';
             }
         }
     }
